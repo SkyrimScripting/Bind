@@ -42,7 +42,8 @@ SomeScript AnEditorID
 
 #### Logs
 
-> ℹ ️ If you run into any problems, check the `SkyrimScripting.Bind.log` in your `My Games\Skyrim Special Edition\SKSE\` folder.
+> ℹ ️ If you run into any problems, check the `SkyrimScripting.Bind.log` in your  
+> `My Games\Skyrim Special Edition\SKSE\` folder.
 
 # `v1`
 
