@@ -20,6 +20,7 @@
         <Variable Name="Imports" Value="C:\Modding\PapyrusImports" />
     </Variables>
     <Imports>
+        <Import>@Imports/SKSE/Scripts/Source</Import>
         <Import>C:\Program Files (x86)\Steam\steamapps\common\Skyrim Special Edition\Data\Scripts\Source</Import>
     </Imports>
     <Folders>

@@ -46,6 +46,12 @@ namespace SkyrimScripting::Bind {
                        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
     }
 
+    void Bind_Form(RE::TESForm* form) {
+        auto handle = vm->GetObjectHandlePolicy()->GetHandleForObject(form->GetFormType(), form);
+        RE::BSTSmartPointer<RE::BSScript::Object> object;
+        vm->CreateObject(ScriptName, object);
+        vm->GetObjectBindPolicy()->BindObject(object, handle);
+    }
     void Bind_GeneratedObject_BaseEditorID(const std::string& baseEditorId) {}
     void Bind_GeneratedObject_BaseFormID(RE::FormID baseFormID) {}
     void Bind_GeneratedObject() {}
@@ -57,12 +63,19 @@ namespace SkyrimScripting::Bind {
                          formId);
             return;
         }
-        auto handle = vm->GetObjectHandlePolicy()->GetHandleForObject(form->GetFormType(), form);
-        RE::BSTSmartPointer<RE::BSScript::Object> object;
-        vm->CreateObject(ScriptName, object);
-        vm->GetObjectBindPolicy()->BindObject(object, handle);
+        Bind_Form(form);
     }
-    void Bind_EditorID(const std::string& editorId) {}
+    void Bind_EditorID(const std::string& editorId) {
+        auto* form = RE::TESForm::LookupByEditorID(editorId);
+        if (!form) {
+            logger::info(
+                "BIND ERROR [{}:{}] ({}) Form Editor ID '{}' does not exist (You might want to use po3 Tweaks if "
+                "you're not already!)",
+                FilePath, LineNumber, ScriptName, editorId);
+            return;
+        }
+        Bind_Form(form);
+    }
     void AutoBindBasedOnScriptExtends() {}
 
     void ProcessBindingLine(std::string line) {
@@ -81,7 +94,7 @@ namespace SkyrimScripting::Bind {
         if (bindTarget.empty())
             AutoBindBasedOnScriptExtends();
         else if (bindTarget.starts_with("0x"))
-            Bind_FormID(std::stol(bindTarget));
+            Bind_FormID(std::stoi(bindTarget, 0, 16));
         else if (bindTarget == "$player")
             Bind_FormID(0x14);
         else if (bindTarget == "$quest")

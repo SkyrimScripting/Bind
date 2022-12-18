@@ -1,4 +1,4 @@
-scriptName BindMeToPlayer extends Actor
+scriptName BindMeToHodByEditorID extends Actor
 
 event OnInit()
     string script = StringUtil.Substring(self, 1, StringUtil.Find(self, " ") - 1)
