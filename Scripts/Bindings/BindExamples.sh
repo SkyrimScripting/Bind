@@ -7,3 +7,10 @@ BindMeToHodByEditorID HodRef
 BindMeToGeneratedQuest $Quest
 BindMeToGeneratedQuestWithName $Quest(MyCoolQuest)
 BindMeToGeneratedObject $Object
+BindMeToGeneratedObjectEditorID $Object(FoodSweetroll)
+BindMeToGeneratedObjectFormID $Object(0x64B3D)
+
+# Auto
+AutoBindToGeneratedQuest
+AutoBindToGeneratedObject
+AutoBindToPlayer
