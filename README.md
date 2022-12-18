@@ -50,12 +50,12 @@ The goal for `v1` is to be _as minimal as possible_:
   NameOfScript
   ```
   ```psc
-  scriptName NameOfScript extends Form ; Anonymous Quest
   scriptName NameOfScript extends Quest ; Anonymous Quest
   scriptName NameOfScript extends Actor ; Player
   scriptName NameOfScript extends ObjectReference ; Anonymous Object
   scriptName NameOfScript extends CustomType ; CustomType parent(s) checked
   ```
+- Nothing is configurable
 
 <details><summary>Future Planned Version Features</summary>
 
