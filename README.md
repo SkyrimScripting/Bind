@@ -10,6 +10,40 @@
 
 This is a **Developer Tool:** _for testing Papyrus scripts!_
 
+# Usage
+
+1. [Install Bind](https://github.com/SkyrimScripting/Bind/releases/download/v1/BIND.Papyrus.Scripts.7z) (_it's an SKSE .dll compatible with SE/AE/GOG/VR_)
+1. Create a Papyrus script
+   >  _if you want it to extend a `Quest` or `ObjectReference`, specify an `extends`_
+1. Create a file `Data\Scripts\Bindings\<your mod name>.txt`
+1. Put the name of each of your scripts in the file, one line per script
+   ```
+   MyScriptOne
+   MyScriptTwo
+   ```
+1. Run the game!
+   > Each of your scripts will automatically be bound to a game object  
+   > and the `event OnInit()` of each script will run
+
+## Specifying _what_ to bind the script to.
+
+If you create `scriptName Whatever extends Quest`, it will bind to an generated quest.
+
+If you create `scriptName Whatever extends ObjectRefenrence`, it will bind to a generated object.
+
+If you create `scriptName Whatever extends Actor`, it will bind to the Player.
+
+If you want to extend a _specific_ object, see the [`v1`](#v1) details below for this release.
+
+```sh
+SomeScript 0x123
+SomeScript AnEditorID
+```
+
+#### Logs
+
+> ℹ ️ If you run into any problems, check the `SkyrimScripting.Bind.log` in your `My Games\Skyrim Special Edition\SKSE\` folder.
+
 # `v1`
 
 The goal for `v1` is to be _as minimal as possible_:
@@ -59,6 +93,7 @@ The goal for `v1` is to be _as minimal as possible_:
   scriptName NameOfScript extends ObjectReference ; Anonymous Object
   scriptName NameOfScript extends CustomType ; CustomType parent(s) checked
   ```
+- Binding to objects from mods (_if you don't know the full Form ID_) is not supported in `v1`
 - Nothing is configurable
 
 <details><summary>Future Planned Version Features</summary>
