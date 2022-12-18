@@ -2,6 +2,8 @@
 
 > Bind Papyrus Scripts On Game Load
 
+> **Developer Tool:** _for testing Papyrus scripts_
+
 ![Bind](Images/Logo.png)
 
 # `v1`
