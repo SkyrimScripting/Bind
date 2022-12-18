@@ -1,10 +1,14 @@
 # Bind
 
+[![Download Bind](https://github.com/SkyrimScripting/SkyrimScripting/raw/main/Resources/DownloadButton.png)](https://github.com/SkyrimScripting/Bind/releases/download/v1/BIND.Papyrus.Scripts.7z)
+
 > Bind Papyrus Scripts On Game Load
 
-> **Developer Tool:** _for testing Papyrus scripts_
-
 ![Bind](Images/Logo.png)
+
+# Papyrus Development
+
+This is a **Developer Tool:** _for testing Papyrus scripts!_
 
 # `v1`
 
