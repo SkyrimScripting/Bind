@@ -28,10 +28,15 @@ The goal for `v1` is to be _as minimal as possible_:
   ```
   NameOfScript $Quest
   ```
+- Support for binding to an anonymous/generated `Quest` with a provided editor ID
+  ```
+  NameOfScript $Quest(MyCoolQuest)
+  ```
 - Support for binding to an anonymous/generated `ObjectReference`
   ```
   NameOfScript $Object
   ```
+  > _Objects are ALWAYS placed in the `WEMerchantChests` cell. This is not configurable._
 - Support for binding to a generated `ObjectReference` of a specified base Form ID
   ```
   NameOfScript $Object(0x7)

@@ -32,6 +32,11 @@ namespace SkyrimScripting::Bind {
         void SetObject(const RE::BSTSmartPointer<RE::BSScript::Object>&) override {}
     };
 
+    RE::FormID DefaultBaseFormForCreatingObjects_FormID = 0xAEBF3;  // DwarvenFork
+    RE::FormID LocationForPlacingObjects_FormID = 0xBBCD1;          // The chest in WEMerchantChests
+    RE::TESForm* DefaultBaseFormForCreatingObjects;
+    RE::TESObjectREFR* LocationForPlacingObjects;
+
     std::string FilePath;
     unsigned int LineNumber;
     std::string ScriptName;
@@ -52,10 +57,21 @@ namespace SkyrimScripting::Bind {
         vm->CreateObject(ScriptName, object);
         vm->GetObjectBindPolicy()->BindObject(object, handle);
     }
+
+    void Bind_GeneratedObject(RE::TESForm* baseForm = nullptr) {
+        if (!baseForm) baseForm = DefaultBaseFormForCreatingObjects;
+        // By default, simply puts a fork next to the WEMerchantChest in the WEMerchantChests cell. Forking awesome.
+        auto niPointer =
+            LocationForPlacingObjects->PlaceObjectAtMe(skyrim_cast<RE::TESBoundObject*, RE::TESForm>(baseForm), false);
+        Bind_Form(niPointer.get());
+    }
     void Bind_GeneratedObject_BaseEditorID(const std::string& baseEditorId) {}
     void Bind_GeneratedObject_BaseFormID(RE::FormID baseFormID) {}
-    void Bind_GeneratedObject() {}
-    void Bind_GeneratedQuest() {}
+    void Bind_GeneratedQuest(std::string editorId = "") {
+        auto* form = RE::IFormFactory::GetConcreteFormFactoryByType<RE::TESQuest>()->Create();
+        if (!editorId.empty()) form->SetFormEditorID(editorId.c_str());
+        Bind_Form(form);
+    }
     void Bind_FormID(RE::FormID formId) {
         auto* form = RE::TESForm::LookupByID(formId);
         if (!form) {
@@ -79,6 +95,7 @@ namespace SkyrimScripting::Bind {
     void AutoBindBasedOnScriptExtends() {}
 
     void ProcessBindingLine(std::string line) {
+        logger::info("PROCESS [{}:{}] \"{}\"", FilePath, LineNumber, line);
         if (line.empty()) return;
         std::replace(line.begin(), line.end(), '\t', ' ');
         std::istringstream lineStream{line};
@@ -97,6 +114,8 @@ namespace SkyrimScripting::Bind {
             Bind_FormID(std::stoi(bindTarget, 0, 16));
         else if (bindTarget == "$player")
             Bind_FormID(0x14);
+        else if (bindTarget.starts_with("$quest("))
+            Bind_GeneratedQuest(bindTarget.substr(7, bindTarget.size() - 8));
         else if (bindTarget == "$quest")
             Bind_GeneratedQuest();
         else if (bindTarget == "$object")
@@ -122,14 +141,6 @@ namespace SkyrimScripting::Bind {
                 logger::info("BIND ERROR [{}:{}]", FilePath, LineNumber);
             }
         }
-        if (!line.empty()) {
-            LineNumber++;
-            try {
-                ProcessBindingLine(line);
-            } catch (...) {
-                logger::info("BIND ERROR [{}:{}]", FilePath, LineNumber);
-            }
-        }
         file.close();
     }
 
@@ -142,6 +153,8 @@ namespace SkyrimScripting::Bind {
 
     void OnGameStart() {
         vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
+        DefaultBaseFormForCreatingObjects = RE::TESForm::LookupByID(DefaultBaseFormForCreatingObjects_FormID);
+        LocationForPlacingObjects = RE::TESForm::LookupByID<RE::TESObjectREFR>(LocationForPlacingObjects_FormID);
         ProcessAllBindingFiles();
     }
 

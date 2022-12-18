@@ -4,3 +4,6 @@
 BindMeToPlayer $Player
 BindMeToHodByID 0x1348A
 BindMeToHodByEditorID HodRef
+BindMeToGeneratedQuest $Quest
+BindMeToGeneratedQuestWithName $Quest(MyCoolQuest)
+BindMeToGeneratedObject $Object
