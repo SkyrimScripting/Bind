@@ -27,7 +27,7 @@ This is a **Developer Tool:** _for testing Papyrus scripts!_
 
 ## Specifying _what_ to bind the script to.
 
-If you create `scriptName Whatever extends Quest`, it will bind to an generated quest.
+If you create `scriptName Whatever extends Quest`, it will bind to a generated quest.
 
 If you create `scriptName Whatever extends ObjectRefenrence`, it will bind to a generated object.
 
