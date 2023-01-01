@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(SkyrimScripting.Bind VERSION 0.0.1 LANGUAGES CXX)
+project(SkyrimScripting.Bind VERSION 0.2.0 LANGUAGES CXX)
 
 foreach(package jsoncpp CommonLibSSE Champollion SkyrimScripting.Plugin SkyrimScripting.CMake)
     find_package(${package} CONFIG REQUIRED)

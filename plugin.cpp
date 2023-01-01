@@ -3,6 +3,7 @@
 
 #include <Champollion/Pex/FileReader.hpp>
 #include <algorithm>
+#include <chrono>
 #include <filesystem>
 
 namespace SkyrimScripting::Bind {
@@ -69,6 +70,7 @@ namespace SkyrimScripting::Bind {
         RE::BSTSmartPointer<RE::BSScript::Object> object;
         vm->CreateObject(ScriptName, object);
         vm->GetObjectBindPolicy()->BindObject(object, handle);
+        logger::info("Bound form {:x} to {}", form->GetFormID(), ScriptName);
     }
 
     void Bind_GeneratedObject(RE::TESForm* baseForm = nullptr) {
@@ -132,6 +134,7 @@ namespace SkyrimScripting::Bind {
     void ProcessBindingLine(std::string line) {
         if (line.empty()) return;
         trim(line);
+        logger::info("{}", line);
         std::istringstream lineStream{line};
         lineStream >> ScriptName;
         if (ScriptName.empty() || ScriptName.starts_with('#') || ScriptName.starts_with("//")) return;
@@ -221,6 +224,9 @@ namespace SkyrimScripting::Bind {
     }
 
     void SearchForBindScriptDocStrings() {
+        unsigned int scriptCount = 0;
+        unsigned int unmodifiedScriptCount = 0;
+        auto startTime = std::chrono::high_resolution_clock::now();
         ProcessingDocStrings = true;
         DocstringJsonFilePath = std::filesystem::current_path() / JSON_FILE_PATH;
         if (!std::filesystem::is_directory(DocstringJsonFilePath.parent_path())) std::filesystem::create_directory(DocstringJsonFilePath.parent_path());
@@ -231,48 +237,62 @@ namespace SkyrimScripting::Bind {
 
             for (auto& entry : std::filesystem::directory_iterator(scriptsFolder)) {
                 if (!entry.is_regular_file()) continue;
+                scriptCount++;
 
                 auto scriptName = entry.path().filename().replace_extension().string();
                 LowerCase(scriptName);
-
-                auto mtime = std::filesystem::last_write_time(entry.path()).time_since_epoch().count();
-                if (mtimes.isMember(scriptName) && mtimes[scriptName].asInt64() == mtime) {
-                    // Nothing changed. Does it have any BIND lines?
-                    if (scriptBindComments.isMember(scriptName)) {
-                        for (auto bindComment : scriptBindComments[scriptName]) BindingLinesFromComments.emplace_back(scriptName + " " + bindComment.asString().substr(5));
+                try {
+                    auto mtime = std::filesystem::last_write_time(entry.path()).time_since_epoch().count();
+                    if (mtimes.isMember(scriptName) && mtimes[scriptName].asInt64() == mtime) {
+                        unmodifiedScriptCount++;
+                        if (scriptBindComments.isMember(scriptName))
+                            for (auto bindComment : scriptBindComments[scriptName]) BindingLinesFromComments.emplace_back(scriptName + " " + bindComment.asString().substr(5));
                         continue;
                     }
-                }
-                mtimes[scriptName] = mtime;
+                    mtimes[scriptName] = mtime;
 
-                auto pex = Pex::Binary();
-                auto reader = Pex::FileReader(entry.path().string());
-                reader.read(pex);
+                    auto pex = Pex::Binary();
+                    auto reader = Pex::FileReader(entry.path().string());
 
-                auto docString = pex.getObjects().front().getDocString().asString();
-                if (!docString.empty()) {
-                    std::string line;
-                    std::istringstream commentString{docString};
-                    std::atomic<bool> firstFoundBinding = true;
-                    while (std::getline(commentString, line)) {
-                        trim(line);
-                        if (line.starts_with(BIND_COMMENT_PREFIX)) {
-                            if (firstFoundBinding.exchange(false)) scriptBindComments[scriptName].clear();
-                            BindingLinesFromComments.emplace_back(scriptName + " " + line.substr(5));
-                            scriptBindComments[scriptName].append(line);
-                        }
+                    try {
+                        reader.read(pex);
+                    } catch (...) {
+                        logger::error("Champollion library failed to read .pex for script {}", scriptName);
+                        continue;
                     }
-                } else if (scriptBindComments.isMember(scriptName)) {
-                    scriptBindComments.removeMember(scriptName);  // No longer has anything!
+
+                    auto docString = pex.getObjects().front().getDocString().asString();
+                    if (!docString.empty()) {
+                        std::string line;
+                        std::istringstream commentString{docString};
+                        std::atomic<bool> firstFoundBinding = true;
+                        while (std::getline(commentString, line)) {
+                            trim(line);
+                            if (line.starts_with(BIND_COMMENT_PREFIX)) {
+                                if (firstFoundBinding.exchange(false)) scriptBindComments[scriptName].clear();
+                                BindingLinesFromComments.emplace_back(scriptName + " " + line.substr(5));
+                                scriptBindComments[scriptName].append(line);
+                                logger::info("{} {}", scriptName, line);
+                            }
+                        }
+                    } else if (scriptBindComments.isMember(scriptName)) {
+                        scriptBindComments.removeMember(scriptName);  // No longer has anything!
+                    }
+                } catch (...) {
+                    logger::error("Error reading script {}", scriptName);
                 }
             }
         }
         ProcessingDocStrings = false;
+        auto endTime = std::chrono::high_resolution_clock::now();
+        auto durationInMs = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
+        logger::info("DocString Processing {} scripts ({} unmodified) took {}ms", scriptCount, unmodifiedScriptCount, durationInMs);
         SaveJson();
     }
 
     OnInit {
-        SearchForBindScriptDocStrings();
+        std::thread t(SearchForBindScriptDocStrings);
+        t.detach();
         GameStartedEventListener.callback = []() { OnGameStart(); };
         RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink<RE::TESCellFullyLoadedEvent>(&GameStartedEventListener);
     }
