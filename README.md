@@ -167,7 +167,7 @@ scriptName MyScript extends ObjectReference
 ; MQ101 is Unbound
 ; MQ102 is Before the Storm
 ; MQ103 is Bleak Falls Barrow
-scriptName MyScript extends ObjectReference
+scriptName MyScript extends Quest
 {
     !BIND MQ101
     !BIND MQ102
