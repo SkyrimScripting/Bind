@@ -134,7 +134,6 @@ namespace SkyrimScripting::Bind {
     void ProcessBindingLine(std::string line) {
         if (line.empty()) return;
         trim(line);
-        logger::info("{}", line);
         std::istringstream lineStream{line};
         lineStream >> ScriptName;
         if (ScriptName.empty() || ScriptName.starts_with('#') || ScriptName.starts_with("//")) return;
@@ -142,6 +141,7 @@ namespace SkyrimScripting::Bind {
             logger::info("BIND ERROR [{}:{}] Script '{}' does not exist", FilePath, LineNumber, ScriptName);
             return;
         }
+        logger::info("\"{}\"", line);
         std::string bindTarget;
         lineStream >> bindTarget;
         LowerCase(bindTarget);
@@ -245,8 +245,13 @@ namespace SkyrimScripting::Bind {
                     auto mtime = std::filesystem::last_write_time(entry.path()).time_since_epoch().count();
                     if (mtimes.isMember(scriptName) && mtimes[scriptName].asInt64() == mtime) {
                         unmodifiedScriptCount++;
-                        if (scriptBindComments.isMember(scriptName))
-                            for (auto bindComment : scriptBindComments[scriptName]) BindingLinesFromComments.emplace_back(scriptName + " " + bindComment.asString().substr(5));
+                        if (scriptBindComments.isMember(scriptName)) {
+                            for (auto bindComment : scriptBindComments[scriptName]) {
+                                auto bindCommand = scriptName + " " + bindComment.asString().substr(5);
+                                logger::info("{}", bindCommand);
+                                BindingLinesFromComments.emplace_back(bindCommand);
+                            }
+                        }
                         continue;
                     }
                     mtimes[scriptName] = mtime;
@@ -270,9 +275,10 @@ namespace SkyrimScripting::Bind {
                             trim(line);
                             if (line.starts_with(BIND_COMMENT_PREFIX)) {
                                 if (firstFoundBinding.exchange(false)) scriptBindComments[scriptName].clear();
-                                BindingLinesFromComments.emplace_back(scriptName + " " + line.substr(5));
+                                auto bindCommand = scriptName + " " + line.substr(5);
+                                BindingLinesFromComments.emplace_back(bindCommand);
                                 scriptBindComments[scriptName].append(line);
-                                logger::info("{} {}", scriptName, line);
+                                logger::info("{}", bindCommand);
                             }
                         }
                     } else if (scriptBindComments.isMember(scriptName)) {
@@ -291,6 +297,7 @@ namespace SkyrimScripting::Bind {
     }
 
     OnInit {
+        spdlog::set_pattern("%v");
         std::thread t(SearchForBindScriptDocStrings);
         t.detach();
         GameStartedEventListener.callback = []() { OnGameStart(); };
