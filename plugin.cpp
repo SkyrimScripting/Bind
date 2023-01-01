@@ -36,6 +36,16 @@ namespace SkyrimScripting::Bind {
     void LowerCase(std::string& text) {
         std::transform(text.begin(), text.end(), text.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
     }
+    inline void ltrim(std::string& s) {
+        s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) { return !std::isspace(ch); }));
+    }
+    inline void rtrim(std::string& s) {
+        s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) { return !std::isspace(ch); }).base(), s.end());
+    }
+    inline void trim(std::string& s) {
+        rtrim(s);
+        ltrim(s);
+    }
 
     RE::TESForm* LookupFormID(RE::FormID formID) {
         auto* form = RE::TESForm::LookupByID(formID);
@@ -121,7 +131,7 @@ namespace SkyrimScripting::Bind {
 
     void ProcessBindingLine(std::string line) {
         if (line.empty()) return;
-        std::replace(line.begin(), line.end(), '\t', ' ');
+        trim(line);
         std::istringstream lineStream{line};
         lineStream >> ScriptName;
         if (ScriptName.empty() || ScriptName.starts_with('#') || ScriptName.starts_with("//")) return;
@@ -182,6 +192,7 @@ namespace SkyrimScripting::Bind {
         DefaultBaseFormForCreatingObjects = RE::TESForm::LookupByID(0xAEBF3);             // DwarvenFork
         LocationForPlacingObjects = RE::TESForm::LookupByID<RE::TESObjectREFR>(0xBBCD1);  // The chest in WEMerchantChests
         ProcessAllBindingFiles();
+        for (auto binding : BindingLinesFromComments) ProcessBindingLine(binding);
     }
 
     bool InitJson() {
@@ -209,20 +220,6 @@ namespace SkyrimScripting::Bind {
         outputStream << Json::writeString(writer, DocstringJsonRoot);
     }
 
-    // https://stackoverflow.com/questions/216823/how-to-trim-an-stdstring
-    inline void ltrim(std::string& s) {
-        s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) { return !std::isspace(ch); }));
-    }
-    inline void rtrim(std::string& s) {
-        s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) { return !std::isspace(ch); }).base(), s.end());
-    }
-    inline void trim(std::string& s) {
-        rtrim(s);
-        ltrim(s);
-    }
-
-    std::string GetBindCommandFromDocString(const std::string& docString) { return {}; }
-
     void SearchForBindScriptDocStrings() {
         ProcessingDocStrings = true;
         DocstringJsonFilePath = std::filesystem::current_path() / JSON_FILE_PATH;
@@ -236,14 +233,15 @@ namespace SkyrimScripting::Bind {
                 if (!entry.is_regular_file()) continue;
 
                 auto scriptName = entry.path().filename().replace_extension().string();
-                logger::info("Looking at {}", scriptName);
                 LowerCase(scriptName);
 
                 auto mtime = std::filesystem::last_write_time(entry.path()).time_since_epoch().count();
                 if (mtimes.isMember(scriptName) && mtimes[scriptName].asInt64() == mtime) {
                     // Nothing changed. Does it have any BIND lines?
-
-                    continue;
+                    if (scriptBindComments.isMember(scriptName)) {
+                        for (auto bindComment : scriptBindComments[scriptName]) BindingLinesFromComments.emplace_back(scriptName + " " + bindComment.asString().substr(5));
+                        continue;
+                    }
                 }
                 mtimes[scriptName] = mtime;
 
@@ -260,7 +258,7 @@ namespace SkyrimScripting::Bind {
                         trim(line);
                         if (line.starts_with(BIND_COMMENT_PREFIX)) {
                             if (firstFoundBinding.exchange(false)) scriptBindComments[scriptName].clear();
-                            BindingLinesFromComments.emplace_back(line);
+                            BindingLinesFromComments.emplace_back(scriptName + " " + line.substr(5));
                             scriptBindComments[scriptName].append(line);
                         }
                     }
