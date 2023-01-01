@@ -22,7 +22,6 @@ This is a **Developer Tool:** _for testing Papyrus scripts!_
 
 1. [Install Bind](https://github.com/SkyrimScripting/Bind/releases/download/v1/BIND.Papyrus.Scripts.7z) (_it's an SKSE .dll compatible with SE/AE/GOG/VR_)
 1. Create a Papyrus script
-   >  _if you want it to extend a `Quest` or `ObjectReference`, specify an `extends`_
 1. Add a `{!BIND}` comment to the script (_see examples below_)
    ```papyrus
    scriptName MyMCM extends Quest
