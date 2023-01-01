@@ -1,3 +1,7 @@
+// v1 and v2 of {!BIND} are intentionally kept in one-file to keep things minimal.
+//
+// Expect the upcoming version to do some *limited* refactoring into sensible objects.
+
 #include <SkyrimScripting/Plugin.h>
 #include <json/json.h>
 
