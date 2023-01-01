@@ -1,6 +1,8 @@
 #include <SkyrimScripting/Plugin.h>
 #include <json/json.h>
 
+#include <Champollion/Pex/FileReader.hpp>
+#include <algorithm>
 #include <filesystem>
 
 namespace SkyrimScripting::Bind {
@@ -15,6 +17,8 @@ namespace SkyrimScripting::Bind {
         }
     };
 
+    bool ProcessingDocStrings;
+    std::vector<std::string> BindingLinesFromComments;
     Json::Value DocstringJsonRoot;
     std::filesystem::path DocstringJsonFilePath;
     RE::TESForm* DefaultBaseFormForCreatingObjects;
@@ -24,9 +28,10 @@ namespace SkyrimScripting::Bind {
     std::string ScriptName;
     RE::BSScript::IVirtualMachine* vm;
     GameStartedEvent GameStartedEventListener;
+    constexpr auto BIND_COMMENT_PREFIX = "!BIND";
     constexpr auto DEFAULT_JSON = R"({"mtimes":{},"scripts":{}})";
-    constexpr auto JSON_FILE_PATH = "Data/SkyrimScripting/Bind/DocStrings.json";
-    constexpr auto BINDING_FILES_FOLDER_ROOT = "Data/Scripts/Bindings";
+    constexpr auto JSON_FILE_PATH = "Data\\SkyrimScripting\\Bind\\DocStrings.json";
+    constexpr auto BINDING_FILES_FOLDER_ROOT = "Data\\Scripts\\Bindings";
 
     void LowerCase(std::string& text) {
         std::transform(text.begin(), text.end(), text.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
@@ -180,7 +185,7 @@ namespace SkyrimScripting::Bind {
     }
 
     bool InitJson() {
-        if (std::filesystem::is_block_file(DocstringJsonFilePath)) {
+        if (std::filesystem::is_regular_file(DocstringJsonFilePath)) {
             std::ifstream jsonFileStream(DocstringJsonFilePath);
             std::stringstream jsonFileContent;
             jsonFileContent << jsonFileStream.rdbuf();
@@ -197,10 +202,6 @@ namespace SkyrimScripting::Bind {
         return true;
     }
 
-    void CheckScriptForDocstring(const std::filesystem::path& path) {
-        // auto mtime = std::filesystem::last_write_time(path);
-    }
-
     void SaveJson() {
         Json::StreamWriterBuilder writer;
         writer["indentation"] = "  ";
@@ -208,18 +209,67 @@ namespace SkyrimScripting::Bind {
         outputStream << Json::writeString(writer, DocstringJsonRoot);
     }
 
+    // https://stackoverflow.com/questions/216823/how-to-trim-an-stdstring
+    inline void ltrim(std::string& s) {
+        s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) { return !std::isspace(ch); }));
+    }
+    inline void rtrim(std::string& s) {
+        s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) { return !std::isspace(ch); }).base(), s.end());
+    }
+    inline void trim(std::string& s) {
+        rtrim(s);
+        ltrim(s);
+    }
+
+    std::string GetBindCommandFromDocString(const std::string& docString) { return {}; }
+
     void SearchForBindScriptDocStrings() {
+        ProcessingDocStrings = true;
         DocstringJsonFilePath = std::filesystem::current_path() / JSON_FILE_PATH;
         if (!std::filesystem::is_directory(DocstringJsonFilePath.parent_path())) std::filesystem::create_directory(DocstringJsonFilePath.parent_path());
         if (InitJson()) {
-            // DocstringFileModifiedTimes = DocstringJson["mtimes"];
-            // DocstringScriptBindComments = DocstringJson["scripts"];
-            // auto scriptsFolder = std::filesystem::current_path() / "Data/Scripts";
-            // for (auto& path : std::filesystem::directory_iterator(scriptsFolder)) CheckScriptForDocstring(path);
+            auto& scriptBindComments = DocstringJsonRoot["scripts"];
+            auto& mtimes = DocstringJsonRoot["mtimes"];
+            auto scriptsFolder = std::filesystem::current_path() / "Data\\Scripts";
+
+            for (auto& entry : std::filesystem::directory_iterator(scriptsFolder)) {
+                if (!entry.is_regular_file()) continue;
+
+                auto scriptName = entry.path().filename().replace_extension().string();
+                logger::info("Looking at {}", scriptName);
+                LowerCase(scriptName);
+
+                auto mtime = std::filesystem::last_write_time(entry.path()).time_since_epoch().count();
+                if (mtimes.isMember(scriptName) && mtimes[scriptName].asInt64() == mtime) {
+                    // Nothing changed. Does it have any BIND lines?
+
+                    continue;
+                }
+                mtimes[scriptName] = mtime;
+
+                auto pex = Pex::Binary();
+                auto reader = Pex::FileReader(entry.path().string());
+                reader.read(pex);
+
+                auto docString = pex.getObjects().front().getDocString().asString();
+                if (!docString.empty()) {
+                    std::string line;
+                    std::istringstream commentString{docString};
+                    std::atomic<bool> firstFoundBinding = true;
+                    while (std::getline(commentString, line)) {
+                        trim(line);
+                        if (line.starts_with(BIND_COMMENT_PREFIX)) {
+                            if (firstFoundBinding.exchange(false)) scriptBindComments[scriptName].clear();
+                            BindingLinesFromComments.emplace_back(line);
+                            scriptBindComments[scriptName].append(line);
+                        }
+                    }
+                } else if (scriptBindComments.isMember(scriptName)) {
+                    scriptBindComments.removeMember(scriptName);  // No longer has anything!
+                }
+            }
         }
-
-        DocstringJsonRoot["mtimes"]["new"] = 123;
-
+        ProcessingDocStrings = false;
         SaveJson();
     }
 
