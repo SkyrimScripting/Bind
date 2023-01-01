@@ -1,6 +1,14 @@
-# Bind
+# `{!BIND}`
 
-[![Download Bind](https://github.com/SkyrimScripting/SkyrimScripting/raw/main/Resources/DownloadButton.png)](https://github.com/SkyrimScripting/Bind/releases/download/v1/BIND.Papyrus.Scripts.7z)
+<a 
+    title="Download BIND SKSE Plugin - Install in your Mod Manager"
+    href="https://github.com/SkyrimScripting/Bind/releases/download/v2/BIND.v2.7z">
+    <img
+        alt="Download BIND SKSE Plugin - Install in your Mod Manager"
+        src="https://raw.githubusercontent.com/SkyrimScripting/Download/main/DownloadButton_256.png"
+        width="100"
+        />
+</a>
 
 > Bind Papyrus Scripts On Game Load
 
@@ -15,107 +23,160 @@ This is a **Developer Tool:** _for testing Papyrus scripts!_
 1. [Install Bind](https://github.com/SkyrimScripting/Bind/releases/download/v1/BIND.Papyrus.Scripts.7z) (_it's an SKSE .dll compatible with SE/AE/GOG/VR_)
 1. Create a Papyrus script
    >  _if you want it to extend a `Quest` or `ObjectReference`, specify an `extends`_
-1. Create a file `Data\Scripts\Bindings\<your mod name>.txt`
-1. Put the name of each of your scripts in the file, one line per script
-   ```
-   MyScriptOne
-   MyScriptTwo
+1. Add a `{!BIND}` comment to the script (_see examples below_)
+   ```papyrus
+   scriptName MyMCM extends Quest
+   {!BIND}
+
+   event OnInit()
+     Debug.MessageBox("This is fantastic!") ; <--- automatically runs :)
+   endEvent
    ```
 1. Run the game!
-   > Each of your scripts will automatically be bound to a game object  
-   > and the `event OnInit()` of each script will run
+   > Each of your scripts will automatically be bound to a game object.  
+   > _e.g. the `event OnInit()` of each script will run_
 
-## Specifying _what_ to bind the script to.
+# `{!BIND}` is for Papyrus developers
 
-If you create `scriptName Whatever extends Quest`, it will bind to a generated quest.
+At this time, `{!BIND}` is only intended for **developers**.
 
-If you create `scriptName Whatever extends ObjectRefenrence`, it will bind to a generated object.
+Scripts are loaded **every time the game is run**.
 
-If you create `scriptName Whatever extends Actor`, it will bind to the Player.
+There is no concept of "saves" at this time.
 
-If you want to extend a _specific_ object, see the [`v1`](#v1) details below for this release.
+> _We might make `{!BIND}` production-ready for distribution with mods in the future._
 
-```sh
-SomeScript 0x123
-SomeScript AnEditorID
+# `{!BIND}` with no arguments
+
+If your script comment is simply `{!BIND}` with no arguments:
+
+## Bind to Player
+
+```papyrus
+; This will bind to the Player
+; because it "extends Actor"
+scriptName MyScript extends Actor
+{!BIND}
 ```
 
-#### Logs
+## Bind to Quest
+
+```papyrus
+; This will generate a random quest and bind to it
+; because it "extends Quest"
+scriptName MyScript extends Quest
+{!BIND}
+```
+
+## Bind to Object
+
+```papyrus
+; This will generate a random object and bind to it
+; because it "extends ObjectReference"
+scriptName MyScript extends ObjectReference
+{!BIND}
+```
+
+# `{!BIND}` to specific objects
+
+## Bind by 0x Form ID
+
+```papyrus
+; This will bind to the game reference of the "Hod" NPC in Riverwood
+; because 0x1348A is the Form ID of this reference
+scriptName MyScript extends Actor
+{!BIND 0x1348A}
+```
+
+## Bind by Editor ID
+
+> _Note: most Editor ID lookups only work if you (and your users) install:_
+> - _[powerofthree's Tweaks](https://www.nexusmods.com/skyrimspecialedition/mods/51073) ([VR](https://www.nexusmods.com/skyrimspecialedition/mods/59510))_
+
+```papyrus
+; This will bind to the game reference of the "Hod" NPC in Riverwood
+; because "HodRef" is an Editor ID matching the NPC
+scriptName MyScript extends Actor
+{!BIND HodRef}
+```
+
+## Bind to a new Quest with a provided Editor ID
+
+```papyrus
+; This will generate a new quest and give it the Editor ID "MyCoolQuest"
+; and bind to it.
+scriptName MyScript extends Quest
+{!BIND $Quest(MyCoolQuest)}
+```
+
+## Bind to new Object Reference of specific Base Form
+
+> _Note: generated objects for ObjectReference scripts are spawned in the `WEMerchantChests` CELL._  
+> _If you don't specify a type of `$Object`, then a `DwarvenFork` is spawned._
+
+### By Form ID
+
+```papyrus
+; This will bind to a reference to a generated Sweet Roll
+; because 0x64B3D is the Form ID of a Sweet Roll
+scriptName MyScript extends ObjectReference
+{!BIND $Object(0x64B3D)}
+```
+
+### By Editor ID
+
+```papyrus
+; This will bind to a reference to a generated Sweet Roll
+; because 0x64B3D is the Form ID of a Sweet Roll
+scriptName MyScript extends ObjectReference
+{!BIND $Object(FoodSweetRoll)}
+```
+
+## `{!BIND}` to multiple objects from the same script
+
+A single script can bind to an unlimited number of objects.
+
+## Multiple Actors
+
+```papyrus
+; This will bind `MyScript` to the three specified NPCs in Riverwood
+scriptName MyScript extends Actor
+{
+    !BIND HodRef
+    !BIND SvenRef
+    !BIND HildeRef
+}
+```
+
+## Multiple Objects
+
+```papyrus
+; This will bind `MyScript` to the three specified object references
+; You could use Form IDs of any object in the game
+scriptName MyScript extends ObjectReference
+{
+    !BIND 0x123
+    !BIND 0x456
+    !BIND 0x789
+}
+```
+
+## Multiple Quests
+
+```papyrus
+; This will bind `MyScript` to the three specified Quests
+; MQ101 is Unbound
+; MQ102 is Before the Storm
+; MQ103 is Bleak Falls Barrow
+scriptName MyScript extends ObjectReference
+{
+    !BIND MQ101
+    !BIND MQ102
+    !BIND MQ103
+}
+```
+
+# Logs
 
 > ℹ ️ If you run into any problems, check the `SkyrimScripting.Bind.log` in your  
 > `My Games\Skyrim Special Edition\SKSE\` folder.
-
-# `v1`
-
-The goal for `v1` is to be _as minimal as possible_:
-
-- Bindings are defined in `Scripts\Bindings\`
-- Each file should contain 1 line per desired "binding" (_attach script to something_)
-- Support for binding to objects by Form ID
-  ```
-  NameOfScript 0x14
-  ```
-- Support for binding to objects by Editor ID
-  ```
-  NameOfScript dlc1serana
-  ```
-- Support for binding to the Player (_as an `Actor` Form, not a `ReferenceAlias`_)
-  ```
-  NameOfScript $Player
-  ```
-- Support for binding to an anonymous/generated `Quest`
-  ```
-  NameOfScript $Quest
-  ```
-- Support for binding to an anonymous/generated `Quest` with a provided editor ID
-  ```
-  NameOfScript $Quest(MyCoolQuest)
-  ```
-- Support for binding to an anonymous/generated `ObjectReference`
-  ```
-  NameOfScript $Object
-  ```
-  > _Objects are ALWAYS placed in the `WEMerchantChests` cell. This is not configurable._
-- Support for binding to a generated `ObjectReference` of a specified base Form ID
-  ```
-  NameOfScript $Object(0x7)
-  ```
-- Support for binding to a generated `ObjectReference` of a specified base Editor ID
-  ```
-  NameOfScript $Object(FoodSweetroll)
-  ```
-- Support for determining what to bind to automatically based on script `extends`
-  ```
-  NameOfScript
-  ```
-  ```psc
-  scriptName NameOfScript extends Quest ; Anonymous Quest
-  scriptName NameOfScript extends Actor ; Player
-  scriptName NameOfScript extends ObjectReference ; Anonymous Object
-  scriptName NameOfScript extends CustomType ; CustomType parent(s) checked
-  ```
-- Binding to objects from mods (_if you don't know the full Form ID_) is not supported in `v1`
-- Nothing is configurable
-
-<details><summary>Future Planned Version Features</summary>
-
-# `v1.1` Champollion support (**Planned**)
-
-> _This has not yet been implemented but is planned for the next release._
-
-- Read every `.pex` (_file mtime support_)
-- Auto register any including this comment:
-  ```psc
-  scriptName Whatever
-  {
-    BIND: Player
-    BIND: $NewQuest$
-  }
-  ```
-- Or Simply
-  ```psc
-  scriptName Whatever
-  {BIND}
-  ```
-
-</details>
