@@ -1,8 +1,7 @@
-// This whole plugin intentionally implemented in 1 file (for a truly minimalistic v1 of BIND) - Under 200 LOC
+#include <SkyrimScripting/Plugin.h>
+#include <json/json.h>
 
-#include <spdlog/sinks/basic_file_sink.h>
-
-namespace logger = SKSE::log;
+#include <filesystem>
 
 namespace SkyrimScripting::Bind {
 
@@ -16,6 +15,8 @@ namespace SkyrimScripting::Bind {
         }
     };
 
+    Json::Value DocstringJsonRoot;
+    std::filesystem::path DocstringJsonFilePath;
     RE::TESForm* DefaultBaseFormForCreatingObjects;
     RE::TESObjectREFR* LocationForPlacingObjects;
     std::string FilePath;
@@ -23,6 +24,8 @@ namespace SkyrimScripting::Bind {
     std::string ScriptName;
     RE::BSScript::IVirtualMachine* vm;
     GameStartedEvent GameStartedEventListener;
+    constexpr auto DEFAULT_JSON = R"({"mtimes":{},"scripts":{}})";
+    constexpr auto JSON_FILE_PATH = "Data/SkyrimScripting/Bind/DocStrings.json";
     constexpr auto BINDING_FILES_FOLDER_ROOT = "Data/Scripts/Bindings";
 
     void LowerCase(std::string& text) {
@@ -176,23 +179,53 @@ namespace SkyrimScripting::Bind {
         ProcessAllBindingFiles();
     }
 
-    void SetupLog() {
-        auto logsFolder = SKSE::log::log_directory();
-        auto pluginName = SKSE::PluginDeclaration::GetSingleton()->GetName();
-        auto logFilePath = *logsFolder / std::format("{}.log", pluginName);
-        auto fileLoggerPtr = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath.string(), true);
-        auto loggerPtr = std::make_shared<spdlog::logger>("log", std::move(fileLoggerPtr));
-        spdlog::set_default_logger(std::move(loggerPtr));
-        spdlog::set_level(spdlog::level::trace);
-        spdlog::flush_on(spdlog::level::info);
-        spdlog::set_pattern("%v");
+    bool InitJson() {
+        if (std::filesystem::is_block_file(DocstringJsonFilePath)) {
+            std::ifstream jsonFileStream(DocstringJsonFilePath);
+            std::stringstream jsonFileContent;
+            jsonFileContent << jsonFileStream.rdbuf();
+            Json::Reader reader;
+            auto success = reader.parse(jsonFileContent.str(), DocstringJsonRoot);
+            if (!success) {
+                logger::error("Failed to parse json file required for Bind to parse script comments. Path: '{}'", DocstringJsonFilePath.string());
+                return false;
+            }
+        } else {
+            Json::Reader reader;
+            reader.parse(DEFAULT_JSON, DocstringJsonRoot);
+        }
+        return true;
     }
 
-    SKSEPluginLoad(const SKSE::LoadInterface* skse) {
-        SKSE::Init(skse);
-        SetupLog();
+    void CheckScriptForDocstring(const std::filesystem::path& path) {
+        // auto mtime = std::filesystem::last_write_time(path);
+    }
+
+    void SaveJson() {
+        Json::StreamWriterBuilder writer;
+        writer["indentation"] = "  ";
+        std::ofstream outputStream(DocstringJsonFilePath, std::ios::out);
+        outputStream << Json::writeString(writer, DocstringJsonRoot);
+    }
+
+    void SearchForBindScriptDocStrings() {
+        DocstringJsonFilePath = std::filesystem::current_path() / JSON_FILE_PATH;
+        if (!std::filesystem::is_directory(DocstringJsonFilePath.parent_path())) std::filesystem::create_directory(DocstringJsonFilePath.parent_path());
+        if (InitJson()) {
+            // DocstringFileModifiedTimes = DocstringJson["mtimes"];
+            // DocstringScriptBindComments = DocstringJson["scripts"];
+            // auto scriptsFolder = std::filesystem::current_path() / "Data/Scripts";
+            // for (auto& path : std::filesystem::directory_iterator(scriptsFolder)) CheckScriptForDocstring(path);
+        }
+
+        DocstringJsonRoot["mtimes"]["new"] = 123;
+
+        SaveJson();
+    }
+
+    OnInit {
+        SearchForBindScriptDocStrings();
         GameStartedEventListener.callback = []() { OnGameStart(); };
         RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink<RE::TESCellFullyLoadedEvent>(&GameStartedEventListener);
-        return true;
     }
 }

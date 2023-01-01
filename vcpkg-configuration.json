@@ -1,12 +1,30 @@
 {
-    "registries": [
-        {
-            "kind": "git",
-            "repository": "https://gitlab.com/colorglass/vcpkg-colorglass",
-            "baseline": "6fb127f7d425ae3cf3fab0f79005d907c885c0d8",
-            "packages": [
-                "commonlibsse-ng"
-            ]
-        }
-    ]
+  "default-registry": {
+    "kind": "git",
+    "repository": "https://github.com/microsoft/vcpkg.git",
+    "baseline": "cc288af760054fa489574bd8e22d05aa8fa01e5c"
+  },
+  "registries": [
+    {
+        "kind": "git",
+        "repository": "https://gitlab.com/colorglass/vcpkg-colorglass",
+        "baseline": "6fb127f7d425ae3cf3fab0f79005d907c885c0d8",
+        "packages": ["commonlibsse-ng"]
+    },
+    {
+      "kind": "git",
+      "repository": "https://github.com/SkyrimScripting/vcpkg-dev.git",
+      "baseline": "6bef2935934077c80b5a1278946c3c31c9e5a975",
+      "packages": ["champollion"]
+    },
+    {
+      "kind": "git",
+      "repository": "https://github.com/SkyrimScripting/vcpkg.git",
+      "baseline": "b4222a34c11f6ff3443b6fb14ac2e6cfacb6b763",
+      "packages": [
+        "skyrimscripting-cmake",
+        "skyrimscripting-plugin"
+      ]
+    }
+  ]
 }
