@@ -3,6 +3,10 @@
     "name": "hello-world",
     "version-string": "0.0.1",
     "dependencies": [
-        "commonlibsse-ng"
+        "jsoncpp",
+        "commonlibsse-ng",
+        "champollion",
+        { "name": "skyrimscripting-cmake", "version>=": "0.0.1" },
+        { "name": "skyrimscripting-plugin", "version>=": "0.1.0#1" }
     ]
 }

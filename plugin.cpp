@@ -1,8 +1,10 @@
-// This whole plugin intentionally implemented in 1 file (for a truly minimalistic v1 of BIND) - Under 200 LOC
+#include <SkyrimScripting/Plugin.h>
+#include <json/json.h>
 
-#include <spdlog/sinks/basic_file_sink.h>
-
-namespace logger = SKSE::log;
+#include <Champollion/Pex/FileReader.hpp>
+#include <algorithm>
+#include <chrono>
+#include <filesystem>
 
 namespace SkyrimScripting::Bind {
 
@@ -16,6 +18,10 @@ namespace SkyrimScripting::Bind {
         }
     };
 
+    bool ProcessingDocStrings;
+    std::vector<std::string> BindingLinesFromComments;
+    Json::Value DocstringJsonRoot;
+    std::filesystem::path DocstringJsonFilePath;
     RE::TESForm* DefaultBaseFormForCreatingObjects;
     RE::TESObjectREFR* LocationForPlacingObjects;
     std::string FilePath;
@@ -23,10 +29,23 @@ namespace SkyrimScripting::Bind {
     std::string ScriptName;
     RE::BSScript::IVirtualMachine* vm;
     GameStartedEvent GameStartedEventListener;
-    constexpr auto BINDING_FILES_FOLDER_ROOT = "Data/Scripts/Bindings";
+    constexpr auto BIND_COMMENT_PREFIX = "!BIND";
+    constexpr auto DEFAULT_JSON = R"({"mtimes":{},"scripts":{}})";
+    constexpr auto JSON_FILE_PATH = "Data\\SkyrimScripting\\Bind\\DocStrings.json";
+    constexpr auto BINDING_FILES_FOLDER_ROOT = "Data\\Scripts\\Bindings";
 
     void LowerCase(std::string& text) {
         std::transform(text.begin(), text.end(), text.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    }
+    inline void ltrim(std::string& s) {
+        s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) { return !std::isspace(ch); }));
+    }
+    inline void rtrim(std::string& s) {
+        s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) { return !std::isspace(ch); }).base(), s.end());
+    }
+    inline void trim(std::string& s) {
+        rtrim(s);
+        ltrim(s);
     }
 
     RE::TESForm* LookupFormID(RE::FormID formID) {
@@ -51,6 +70,7 @@ namespace SkyrimScripting::Bind {
         RE::BSTSmartPointer<RE::BSScript::Object> object;
         vm->CreateObject(ScriptName, object);
         vm->GetObjectBindPolicy()->BindObject(object, handle);
+        logger::info("Bound form {:x} to {}", form->GetFormID(), ScriptName);
     }
 
     void Bind_GeneratedObject(RE::TESForm* baseForm = nullptr) {
@@ -113,7 +133,8 @@ namespace SkyrimScripting::Bind {
 
     void ProcessBindingLine(std::string line) {
         if (line.empty()) return;
-        std::replace(line.begin(), line.end(), '\t', ' ');
+        trim(line);
+        logger::info("{}", line);
         std::istringstream lineStream{line};
         lineStream >> ScriptName;
         if (ScriptName.empty() || ScriptName.starts_with('#') || ScriptName.starts_with("//")) return;
@@ -174,25 +195,105 @@ namespace SkyrimScripting::Bind {
         DefaultBaseFormForCreatingObjects = RE::TESForm::LookupByID(0xAEBF3);             // DwarvenFork
         LocationForPlacingObjects = RE::TESForm::LookupByID<RE::TESObjectREFR>(0xBBCD1);  // The chest in WEMerchantChests
         ProcessAllBindingFiles();
+        for (auto binding : BindingLinesFromComments) ProcessBindingLine(binding);
     }
 
-    void SetupLog() {
-        auto logsFolder = SKSE::log::log_directory();
-        auto pluginName = SKSE::PluginDeclaration::GetSingleton()->GetName();
-        auto logFilePath = *logsFolder / std::format("{}.log", pluginName);
-        auto fileLoggerPtr = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath.string(), true);
-        auto loggerPtr = std::make_shared<spdlog::logger>("log", std::move(fileLoggerPtr));
-        spdlog::set_default_logger(std::move(loggerPtr));
-        spdlog::set_level(spdlog::level::trace);
-        spdlog::flush_on(spdlog::level::info);
-        spdlog::set_pattern("%v");
+    bool InitJson() {
+        if (std::filesystem::is_regular_file(DocstringJsonFilePath)) {
+            std::ifstream jsonFileStream(DocstringJsonFilePath);
+            std::stringstream jsonFileContent;
+            jsonFileContent << jsonFileStream.rdbuf();
+            Json::Reader reader;
+            auto success = reader.parse(jsonFileContent.str(), DocstringJsonRoot);
+            if (!success) {
+                logger::error("Failed to parse json file required for Bind to parse script comments. Path: '{}'", DocstringJsonFilePath.string());
+                return false;
+            }
+        } else {
+            Json::Reader reader;
+            reader.parse(DEFAULT_JSON, DocstringJsonRoot);
+        }
+        return true;
     }
 
-    SKSEPluginLoad(const SKSE::LoadInterface* skse) {
-        SKSE::Init(skse);
-        SetupLog();
+    void SaveJson() {
+        Json::StreamWriterBuilder writer;
+        writer["indentation"] = "  ";
+        std::ofstream outputStream(DocstringJsonFilePath, std::ios::out);
+        outputStream << Json::writeString(writer, DocstringJsonRoot);
+    }
+
+    void SearchForBindScriptDocStrings() {
+        unsigned int scriptCount = 0;
+        unsigned int unmodifiedScriptCount = 0;
+        auto startTime = std::chrono::high_resolution_clock::now();
+        ProcessingDocStrings = true;
+        DocstringJsonFilePath = std::filesystem::current_path() / JSON_FILE_PATH;
+        if (!std::filesystem::is_directory(DocstringJsonFilePath.parent_path())) std::filesystem::create_directory(DocstringJsonFilePath.parent_path());
+        if (InitJson()) {
+            auto& scriptBindComments = DocstringJsonRoot["scripts"];
+            auto& mtimes = DocstringJsonRoot["mtimes"];
+            auto scriptsFolder = std::filesystem::current_path() / "Data\\Scripts";
+
+            for (auto& entry : std::filesystem::directory_iterator(scriptsFolder)) {
+                if (!entry.is_regular_file()) continue;
+                scriptCount++;
+
+                auto scriptName = entry.path().filename().replace_extension().string();
+                LowerCase(scriptName);
+                try {
+                    auto mtime = std::filesystem::last_write_time(entry.path()).time_since_epoch().count();
+                    if (mtimes.isMember(scriptName) && mtimes[scriptName].asInt64() == mtime) {
+                        unmodifiedScriptCount++;
+                        if (scriptBindComments.isMember(scriptName))
+                            for (auto bindComment : scriptBindComments[scriptName]) BindingLinesFromComments.emplace_back(scriptName + " " + bindComment.asString().substr(5));
+                        continue;
+                    }
+                    mtimes[scriptName] = mtime;
+
+                    auto pex = Pex::Binary();
+                    auto reader = Pex::FileReader(entry.path().string());
+
+                    try {
+                        reader.read(pex);
+                    } catch (...) {
+                        logger::error("Champollion library failed to read .pex for script {}", scriptName);
+                        continue;
+                    }
+
+                    auto docString = pex.getObjects().front().getDocString().asString();
+                    if (!docString.empty()) {
+                        std::string line;
+                        std::istringstream commentString{docString};
+                        std::atomic<bool> firstFoundBinding = true;
+                        while (std::getline(commentString, line)) {
+                            trim(line);
+                            if (line.starts_with(BIND_COMMENT_PREFIX)) {
+                                if (firstFoundBinding.exchange(false)) scriptBindComments[scriptName].clear();
+                                BindingLinesFromComments.emplace_back(scriptName + " " + line.substr(5));
+                                scriptBindComments[scriptName].append(line);
+                                logger::info("{} {}", scriptName, line);
+                            }
+                        }
+                    } else if (scriptBindComments.isMember(scriptName)) {
+                        scriptBindComments.removeMember(scriptName);  // No longer has anything!
+                    }
+                } catch (...) {
+                    logger::error("Error reading script {}", scriptName);
+                }
+            }
+        }
+        ProcessingDocStrings = false;
+        auto endTime = std::chrono::high_resolution_clock::now();
+        auto durationInMs = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
+        logger::info("DocString Processing {} scripts ({} unmodified) took {}ms", scriptCount, unmodifiedScriptCount, durationInMs);
+        SaveJson();
+    }
+
+    OnInit {
+        std::thread t(SearchForBindScriptDocStrings);
+        t.detach();
         GameStartedEventListener.callback = []() { OnGameStart(); };
         RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink<RE::TESCellFullyLoadedEvent>(&GameStartedEventListener);
-        return true;
     }
 }
