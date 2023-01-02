@@ -10,9 +10,7 @@
         />
 </a>
 
-> Bind Papyrus Scripts On Game Load
-
-![Bind](Images/Logo.png)
+![Bind](Images/BIND_v2_LOGO.png)
 
 # Papyrus Development
 
