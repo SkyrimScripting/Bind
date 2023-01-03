@@ -1,7 +1,3 @@
-// v1 and v2 of {!BIND} are intentionally kept in one-file to keep things minimal.
-//
-// Expect the upcoming version to do some *limited* refactoring into sensible objects.
-
 #include <SkyrimScripting/Plugin.h>
 #include <json/json.h>
 
@@ -9,6 +5,9 @@
 #include <algorithm>
 #include <chrono>
 #include <filesystem>
+#include <iomanip>
+
+#include "BIND/Util.h"
 
 namespace SkyrimScripting::Bind {
 
@@ -35,27 +34,6 @@ namespace SkyrimScripting::Bind {
     constexpr auto BIND_COMMENT_PREFIX = "!BIND";
     constexpr auto DEFAULT_JSON = R"({"mtimes":{},"scripts":{}})";
     constexpr auto JSON_FILE_PATH = "Data\\SkyrimScripting\\Bind\\DocStrings.json";
-
-    void LowerCase(std::string& text) {
-        std::transform(text.begin(), text.end(), text.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    }
-    inline void ltrim(std::string& s) {
-        s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) { return !std::isspace(ch); }));
-    }
-    inline void rtrim(std::string& s) {
-        s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) { return !std::isspace(ch); }).base(), s.end());
-    }
-    inline void trim(std::string& s) {
-        rtrim(s);
-        ltrim(s);
-    }
-    std::vector<std::string> split(const std::string& text, char delim) {
-        std::string line;
-        std::vector<std::string> vec;
-        std::stringstream ss(text);
-        while (std::getline(ss, line, delim)) vec.push_back(line);
-        return vec;
-    }
 
     RE::TESForm* LookupFormID(RE::FormID formID) {
         auto* form = RE::TESForm::LookupByID(formID);
@@ -112,7 +90,7 @@ namespace SkyrimScripting::Bind {
         if (form) Bind_Form(form);
     }
     bool IsUnderstoodScriptParentType(std::string parentTypeName) {
-        LowerCase(parentTypeName);
+        Util::LowerCase(parentTypeName);
         if (parentTypeName == "quest" || parentTypeName == "actor" || parentTypeName == "objectreference") return true;
         return false;
     }
@@ -129,7 +107,7 @@ namespace SkyrimScripting::Bind {
             logger::info("BIND ERROR [{}:{}] ({}) Cannot auto-bind to a script which does not `extends` anything", FilePath, LineNumber, ScriptName);
             return;
         }
-        LowerCase(parentName);
+        Util::LowerCase(parentName);
         if (parentName == "quest")
             Bind_GeneratedQuest();
         else if (parentName == "actor")
@@ -141,13 +119,13 @@ namespace SkyrimScripting::Bind {
     }
 
     void ProcessBindingTarget(std::string bindTarget) {
-        trim(bindTarget);
-        LowerCase(bindTarget);
+        Util::Trim(bindTarget);
+        Util::LowerCase(bindTarget);
         if (bindTarget.empty()) {
             AutoBindBasedOnScriptExtends();
             return;
         } else if (bindTarget.contains('|'))
-            for (const auto& target : split(bindTarget, '|')) ProcessBindingTarget(target);
+            for (const auto& target : Util::Split(bindTarget, '|')) ProcessBindingTarget(target);
         else if (bindTarget.starts_with("0x"))
             Bind_FormID(std::stoi(bindTarget, 0, 16));
         else if (bindTarget == "$player")
@@ -168,7 +146,7 @@ namespace SkyrimScripting::Bind {
 
     void ProcessBindingLine(std::string line) {
         if (line.empty()) return;
-        trim(line);
+        Util::Trim(line);
         std::istringstream lineStream{line};
         lineStream >> ScriptName;
         if (ScriptName.empty() || ScriptName.starts_with('#') || ScriptName.starts_with("//")) return;
@@ -230,7 +208,7 @@ namespace SkyrimScripting::Bind {
                 scriptCount++;
 
                 auto scriptName = entry.path().filename().replace_extension().string();
-                LowerCase(scriptName);
+                Util::LowerCase(scriptName);
                 try {
                     auto mtime = std::filesystem::last_write_time(entry.path()).time_since_epoch().count();
                     if (mtimes.isMember(scriptName) && mtimes[scriptName].asInt64() == mtime) {
@@ -262,7 +240,7 @@ namespace SkyrimScripting::Bind {
                         std::istringstream commentString{docString};
                         std::atomic<bool> firstFoundBinding = true;
                         while (std::getline(commentString, line)) {
-                            trim(line);
+                            Util::Trim(line);
                             if (line.starts_with(BIND_COMMENT_PREFIX)) {
                                 if (firstFoundBinding.exchange(false)) scriptBindComments[scriptName].clear();
                                 auto bindCommand = scriptName + " " + line.substr(5);
@@ -289,6 +267,7 @@ namespace SkyrimScripting::Bind {
         spdlog::set_pattern("%v");
         std::thread t(SearchForBindScriptDocStrings);
         t.detach();
+
         GameStartedEventListener.callback = []() { OnGameStart(); };
         RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink<RE::TESCellFullyLoadedEvent>(&GameStartedEventListener);
     }
