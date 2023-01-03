@@ -1,5 +1,9 @@
-scriptName DocStringBindToPlayer extends Actor
-{!BIND}
+scriptName _Bind_Actor_Multiple extends Actor
+{
+    !BIND HodRef
+	    !BIND SvenRef
+    !BIND HildeRef 
+}
 
 event OnInit()
     string script = StringUtil.Substring(self, 1, StringUtil.Find(self, " ") - 1)

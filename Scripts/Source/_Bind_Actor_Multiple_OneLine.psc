@@ -1,5 +1,7 @@
-scriptName DocStringBindToHod extends Actor
-{!BIND HodRef}
+scriptName _Bind_Actor_Multiple_OneLine extends Actor
+{
+    !BIND SvenRef|0x1348A|$Player|HildeRef
+}
 
 event OnInit()
     string script = StringUtil.Substring(self, 1, StringUtil.Find(self, " ") - 1)

@@ -1,9 +1,5 @@
-scriptName DocStringBindToNPCs extends Actor
-{
-    !BIND HodRef
-	    !BIND SvenRef
-    !BIND HildeRef 
-}
+scriptName _Bind_Actor_EditorID extends Actor
+{!BIND HodRef}
 
 event OnInit()
     string script = StringUtil.Substring(self, 1, StringUtil.Find(self, " ") - 1)

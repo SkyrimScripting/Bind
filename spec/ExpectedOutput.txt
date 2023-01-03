@@ -1,9 +1,12 @@
-[!BIND] Script DocStringBindTohod bound to [DocStringBindTohod < (0001348A)>] Hod
-[!BIND] Script DocStringBindToMultipleTargets bound to [DocStringBindToMultipleTargets < (00000014)>] Prisoner
-[!BIND] Script DocStringBindToMultipleTargets bound to [DocStringBindToMultipleTargets < (0001348A)>] Hod
-[!BIND] Script DocStringBindToMultipleTargets bound to [DocStringBindToMultipleTargets < (00013491)>] Sven
-[!BIND] Script DocStringBindToMultipleTargets bound to [DocStringBindToMultipleTargets < (00035534)>] Hilde
-[!BIND] Script DocStringBindToNPCs bound to [DocStringBindToNPCs < (0001348A)>] Hod
-[!BIND] Script DocStringBindToNPCs bound to [DocStringBindToNPCs < (00013491)>] Sven
-[!BIND] Script DocStringBindToNPCs bound to [DocStringBindToNPCs < (00035534)>] Hilde
-[!BIND] Script DocStringBindToplayer bound to [DocStringBindToplayer < (00000014)>] Prisoner
+[!bind] script _bind_actor_editorid bound to [_bind_actor_editorid < (0001348a)>] hod
+
+[!bind] script _bind_actor_multiple bound to [_bind_actor_multiple < (0001348a)>] hod
+[!bind] script _bind_actor_multiple bound to [_bind_actor_multiple < (00013491)>] sven
+[!bind] script _bind_actor_multiple bound to [_bind_actor_multiple < (00035534)>] hilde
+
+[!bind] script _bind_actor_multiple_oneline bound to [_bind_actor_multiple_oneline < (00000014)>] prisoner
+[!bind] script _bind_actor_multiple_oneline bound to [_bind_actor_multiple_oneline < (0001348a)>] hod
+[!bind] script _bind_actor_multiple_oneline bound to [_bind_actor_multiple_oneline < (00013491)>] sven
+[!bind] script _bind_actor_multiple_oneline bound to [_bind_actor_multiple_oneline < (00035534)>] hilde
+
+[!bind] script _bind_actor_player bound to [_bind_actor_player < (00000014)>] prisoner
