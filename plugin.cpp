@@ -36,7 +36,6 @@ namespace SkyrimScripting::Bind {
     constexpr auto BIND_COMMENT_PREFIX = "!BIND";
     constexpr auto DEFAULT_JSON = R"({"mtimes":{},"scripts":{}})";
     constexpr auto JSON_FILE_PATH = "Data\\SkyrimScripting\\Bind\\DocStrings.json";
-    constexpr auto BINDING_FILES_FOLDER_ROOT = "Data\\Scripts\\Bindings";
 
     void LowerCase(std::string& text) {
         std::transform(text.begin(), text.end(), text.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
@@ -184,35 +183,10 @@ namespace SkyrimScripting::Bind {
         ProcessBindingTarget(bindTarget);
     }
 
-    void ProcessBindingFile() {
-        logger::info("Reading Binding File: {}", FilePath);
-        LineNumber = 1;
-        std::string line;
-        std::ifstream file{FilePath, std::ios::in};
-        while (std::getline(file, line)) {
-            LineNumber++;
-            try {
-                ProcessBindingLine(line);
-            } catch (...) {
-                logger::info("BIND ERROR [{}:{}]", FilePath, LineNumber);
-            }
-        }
-        file.close();
-    }
-
-    void ProcessAllBindingFiles() {
-        if (!std::filesystem::is_directory(BINDING_FILES_FOLDER_ROOT)) return;
-        for (auto& file : std::filesystem::directory_iterator(BINDING_FILES_FOLDER_ROOT)) {
-            FilePath = file.path().string();
-            ProcessBindingFile();
-        }
-    }
-
     void OnGameStart() {
         vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
         DefaultBaseFormForCreatingObjects = RE::TESForm::LookupByID(0xAEBF3);             // DwarvenFork
         LocationForPlacingObjects = RE::TESForm::LookupByID<RE::TESObjectREFR>(0xBBCD1);  // The chest in WEMerchantChests
-        ProcessAllBindingFiles();
         for (auto binding : BindingLinesFromComments) ProcessBindingLine(binding);
     }
 

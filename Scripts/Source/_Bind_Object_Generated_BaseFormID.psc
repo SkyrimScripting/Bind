@@ -1,4 +1,5 @@
-scriptName BindMeToGeneratedObjectEditorID extends ObjectReference
+scriptName _Bind_Object_Generated_BaseFormID extends ObjectReference
+{!BIND $Object(0x64B3F) # Cabbage}
 
 event OnInit()
     ; If this will be an 0xFF dynamic form, do not print out `self` (it't not deterministic, which we want for tests)

@@ -1,4 +1,5 @@
-scriptName BindMeToGeneratedQuest extends Quest
+scriptName _Bind_Quest_Generated_EditorID extends Quest
+{!BIND $Quest(MyGeneratedQuest)}
 
 event OnInit()
     ; If this will be an 0xFF dynamic form, do not print out `self` (it't not deterministic, which we want for tests)

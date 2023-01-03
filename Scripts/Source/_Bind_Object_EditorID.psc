@@ -1,4 +1,8 @@
-scriptName AutoBindToPlayer extends Actor
+scriptName _Bind_Object_EditorID extends ObjectReference
+{
+    # I can't think of objects with Editor IDs except for Actors
+    !BIND SvenRef
+}
 
 event OnInit()
     string script = StringUtil.Substring(self, 1, StringUtil.Find(self, " ") - 1)

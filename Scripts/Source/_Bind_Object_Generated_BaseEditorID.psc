@@ -1,4 +1,5 @@
-scriptName AutoBindToGeneratedObject extends ObjectReference
+scriptName _Bind_Object_Generated_BaseEditorID extends ObjectReference
+{!BIND $Object(FoodSweetRoll)}
 
 event OnInit()
     ; If this will be an 0xFF dynamic form, do not print out `self` (it't not deterministic, which we want for tests)
