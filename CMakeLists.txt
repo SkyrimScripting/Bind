@@ -11,3 +11,5 @@ add_skse_plugin(${PROJECT_NAME} SOURCES plugin.cpp)
 foreach(library JsonCpp::JsonCpp Champollion::Champollion SkyrimScriptingPlugin::SkyrimScripting.Plugin)
     target_link_libraries(${PROJECT_NAME} PRIVATE ${library})    
 endforeach()
+
+add_subdirectory(spec)
