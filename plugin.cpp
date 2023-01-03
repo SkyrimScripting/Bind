@@ -51,6 +51,13 @@ namespace SkyrimScripting::Bind {
         rtrim(s);
         ltrim(s);
     }
+    std::vector<std::string> split(const std::string& text, char delim) {
+        std::string line;
+        std::vector<std::string> vec;
+        std::stringstream ss(text);
+        while (std::getline(ss, line, delim)) vec.push_back(line);
+        return vec;
+    }
 
     RE::TESForm* LookupFormID(RE::FormID formID) {
         auto* form = RE::TESForm::LookupByID(formID);
@@ -135,24 +142,15 @@ namespace SkyrimScripting::Bind {
             logger::info("BIND ERROR [{}:{}] ({}) No default BIND behavior available for script which `extends` {}", FilePath, LineNumber, ScriptName, parentName);
     }
 
-    void ProcessBindingLine(std::string line) {
-        if (line.empty()) return;
-        trim(line);
-        std::istringstream lineStream{line};
-        lineStream >> ScriptName;
-        if (ScriptName.empty() || ScriptName.starts_with('#') || ScriptName.starts_with("//")) return;
-        if (!vm->TypeIsValid(ScriptName)) {
-            logger::info("BIND ERROR [{}:{}] Script '{}' does not exist", FilePath, LineNumber, ScriptName);
-            return;
-        }
-        logger::info("\"{}\"", line);
-        std::string bindTarget;
-        lineStream >> bindTarget;
+    void ProcessBindingTarget(std::string bindTarget) {
+        trim(bindTarget);
         LowerCase(bindTarget);
         if (bindTarget.empty()) {
             AutoBindBasedOnScriptExtends();
             return;
-        } else if (bindTarget.starts_with("0x"))
+        } else if (bindTarget.contains('|'))
+            for (const auto& target : split(bindTarget, '|')) ProcessBindingTarget(target);
+        else if (bindTarget.starts_with("0x"))
             Bind_FormID(std::stoi(bindTarget, 0, 16));
         else if (bindTarget == "$player")
             Bind_FormID(0x14);
@@ -168,6 +166,22 @@ namespace SkyrimScripting::Bind {
             Bind_GeneratedObject_BaseEditorID(bindTarget.substr(8, bindTarget.size() - 9));
         else
             Bind_EditorID(bindTarget);
+    }
+
+    void ProcessBindingLine(std::string line) {
+        if (line.empty()) return;
+        trim(line);
+        std::istringstream lineStream{line};
+        lineStream >> ScriptName;
+        if (ScriptName.empty() || ScriptName.starts_with('#') || ScriptName.starts_with("//")) return;
+        if (!vm->TypeIsValid(ScriptName)) {
+            logger::info("BIND ERROR [{}:{}] Script '{}' does not exist", FilePath, LineNumber, ScriptName);
+            return;
+        }
+        logger::info("\"{}\"", line);
+        std::string bindTarget;
+        lineStream >> bindTarget;
+        ProcessBindingTarget(bindTarget);
     }
 
     void ProcessBindingFile() {

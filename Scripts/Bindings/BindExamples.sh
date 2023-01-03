@@ -4,6 +4,7 @@
 BindMeToPlayer $Player
 BindMeToHodByID 0x1348A
 BindMeToHodByEditorID HodRef
+BindMeToMultipleTargets SvenRef|0x1348A|$Player|HildeRef
 BindMeToGeneratedQuest $Quest
 BindMeToGeneratedQuestWithName $Quest(MyCoolQuest)
 BindMeToGeneratedObject $Object

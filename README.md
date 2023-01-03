@@ -173,6 +173,16 @@ scriptName MyScript extends Quest
 }
 ```
 
+## Multiple Targets in a single line
+
+```papyrus
+; This will bind `MyScript` to the the player and three specified NPCs in Riverwood using some of the supported binding options
+scriptName MyScript extends Actor
+{
+    !BIND SvenRef|$Player|0x1348A|HildeRef
+}
+```
+
 # Logs
 
 > ℹ ️ If you run into any problems, check the `SkyrimScripting.Bind.log` in your  
