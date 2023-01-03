@@ -1,12 +1,24 @@
-[!bind] script _bind_actor_editorid bound to [_bind_actor_editorid < (0001348a)>] hod
+[!BIND] Script _bind_actor_player bound to [_bind_actor_player < (00000014)>] Prisoner
 
-[!bind] script _bind_actor_multiple bound to [_bind_actor_multiple < (0001348a)>] hod
-[!bind] script _bind_actor_multiple bound to [_bind_actor_multiple < (00013491)>] sven
-[!bind] script _bind_actor_multiple bound to [_bind_actor_multiple < (00035534)>] hilde
+[!BIND] Script _bind_actor_editorid bound to [_bind_actor_editorid < (0001348A)>] Hod
 
-[!bind] script _bind_actor_multiple_oneline bound to [_bind_actor_multiple_oneline < (00000014)>] prisoner
-[!bind] script _bind_actor_multiple_oneline bound to [_bind_actor_multiple_oneline < (0001348a)>] hod
-[!bind] script _bind_actor_multiple_oneline bound to [_bind_actor_multiple_oneline < (00013491)>] sven
-[!bind] script _bind_actor_multiple_oneline bound to [_bind_actor_multiple_oneline < (00035534)>] hilde
+[!BIND] Script _bind_actor_multiple bound to [_bind_actor_multiple < (0001348A)>] Hod
+[!BIND] Script _bind_actor_multiple bound to [_bind_actor_multiple < (00013491)>] Sven
+[!BIND] Script _bind_actor_multiple bound to [_bind_actor_multiple < (00035534)>] Hilde
 
-[!bind] script _bind_actor_player bound to [_bind_actor_player < (00000014)>] prisoner
+[!BIND] Script _bind_actor_multiple_oneline bound to [_bind_actor_multiple_oneline < (00000014)>] Prisoner
+[!BIND] Script _bind_actor_multiple_oneline bound to [_bind_actor_multiple_oneline < (0001348A)>] Hod
+[!BIND] Script _bind_actor_multiple_oneline bound to [_bind_actor_multiple_oneline < (00013491)>] Sven
+[!BIND] Script _bind_actor_multiple_oneline bound to [_bind_actor_multiple_oneline < (00035534)>] Hilde
+
+[!BIND] Script _bind_object_editorid bound to [_bind_object_editorid < (00013491)>] Sven
+[!BIND] Script _bind_object_formid bound to [_bind_object_formid < (000BBCD1)>] chest
+[!BIND] Script _bind_object_generated bound to Fork
+[!BIND] Script _bind_object_generated_baseeditorid bound to Sweet Roll
+[!BIND] Script _bind_object_generated_baseformid bound to Cabbage
+
+[!BIND] Script _bind_quest_editorid bound to MQ101
+[!BIND] Script _bind_quest_formid bound to FreeformRiften17
+[!BIND] Script _bind_quest_formid bound to FreeformRiften17 ALREADY INITIALIZED!
+[!BIND] Script _bind_quest_generated bound to 
+[!BIND] Script _bind_quest_generated_editorid bound to mygeneratedquest
