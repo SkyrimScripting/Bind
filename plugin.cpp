@@ -22,7 +22,6 @@ namespace SkyrimScripting::Bind {
         }
     };
 
-    bool ProcessingDocStrings;
     std::vector<std::string> BindingLinesFromComments;
     Json::Value DocstringJsonRoot;
     std::filesystem::path DocstringJsonFilePath;
@@ -219,7 +218,6 @@ namespace SkyrimScripting::Bind {
         unsigned int scriptCount = 0;
         unsigned int unmodifiedScriptCount = 0;
         auto startTime = std::chrono::high_resolution_clock::now();
-        ProcessingDocStrings = true;
         DocstringJsonFilePath = std::filesystem::current_path() / JSON_FILE_PATH;
         if (!std::filesystem::is_directory(DocstringJsonFilePath.parent_path())) std::filesystem::create_directory(DocstringJsonFilePath.parent_path());
         if (InitJson()) {
@@ -281,7 +279,6 @@ namespace SkyrimScripting::Bind {
                 }
             }
         }
-        ProcessingDocStrings = false;
         auto endTime = std::chrono::high_resolution_clock::now();
         auto durationInMs = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
         logger::info("DocString Processing {} scripts ({} unmodified) took {}ms", scriptCount, unmodifiedScriptCount, durationInMs);
