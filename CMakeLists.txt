@@ -7,6 +7,7 @@ foreach(package jsoncpp CommonLibSSE Champollion SkyrimScripting.Plugin SkyrimSc
 endforeach()
 
 add_skse_plugin(${PROJECT_NAME} SOURCES plugin.cpp)
+target_include_directories(${PROJECT_NAME} PRIVATE include)
 
 foreach(library JsonCpp::JsonCpp Champollion::Champollion SkyrimScriptingPlugin::SkyrimScripting.Plugin)
     target_link_libraries(${PROJECT_NAME} PRIVATE ${library})    

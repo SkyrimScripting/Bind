@@ -3,6 +3,9 @@
 
 #include <Champollion/Pex/FileReader.hpp>
 
+#include "BIND/BindingDefinition.h"
+#include "BIND/Scan.h"
+#include "BIND/System.h"
 #include "BIND/Util.h"
 
 namespace SkyrimScripting::Bind {
@@ -261,10 +264,12 @@ namespace SkyrimScripting::Bind {
 
     OnInit {
         spdlog::set_pattern("%v");
-        std::thread t(SearchForBindScriptDocStrings);
-        t.detach();
-
-        GameStartedEventListener.callback = []() { OnGameStart(); };
-        RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink<RE::TESCellFullyLoadedEvent>(&GameStartedEventListener);
+        BIND::System::GetSingleton().Startup();
     }
 }
+
+// std::thread t(SearchForBindScriptDocStrings);
+// t.detach();
+
+// GameStartedEventListener.callback = []() { OnGameStart(); };
+// RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink<RE::TESCellFullyLoadedEvent>(&GameStartedEventListener);
