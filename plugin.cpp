@@ -212,7 +212,7 @@ namespace SkyrimScripting::Bind {
         vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
         DefaultBaseFormForCreatingObjects = RE::TESForm::LookupByID(0xAEBF3);             // DwarvenFork
         LocationForPlacingObjects = RE::TESForm::LookupByID<RE::TESObjectREFR>(0xBBCD1);  // The chest in WEMerchantChests
-        ProcessAllBindingFiles();
+        // ProcessAllBindingFiles();
         for (auto binding : BindingLinesFromComments) ProcessBindingLine(binding);
     }
 
