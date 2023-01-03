@@ -1,24 +1,24 @@
-[!BIND] Script AutoBindToGeneratedQuest bound to 
-[!BIND] Script BindMeToGeneratedQuestWithName bound to mycoolquest
-[!BIND] Script BindMeToGeneratedQuest bound to 
-[!BIND] Script docstringbindtomultipletargets bound to [docstringbindtomultipletargets < (00035534)>] Hilde
-[!BIND] Script docstringbindtonpcs bound to [docstringbindtonpcs < (00013491)>] Sven
-[!BIND] Script docstringbindtonpcs bound to [docstringbindtonpcs < (00035534)>] Hilde
-[!BIND] Script docstringbindtonpcs bound to [docstringbindtonpcs < (0001348A)>] Hod
-[!BIND] Script docstringbindtomultipletargets bound to [docstringbindtomultipletargets < (00013491)>] Sven
 [!BIND] Script AutoBindToGeneratedObject bound to Fork
-[!BIND] Script docstringbindtohod bound to [docstringbindtohod < (0001348A)>] Hod
+[!BIND] Script AutoBindToGeneratedQuest bound to 
 [!BIND] Script AutoBindToPlayer bound to [AutoBindToPlayer < (00000014)>] Prisoner
-[!BIND] Script docstringbindtomultipletargets bound to [docstringbindtomultipletargets < (0001348A)>] Hod
-[!BIND] Script BindMeToGeneratedObjectFormID bound to Sweet Roll
-[!BIND] Script BindMeToGeneratedObjectEditorID bound to Sweet Roll
-[!BIND] Script docstringbindtoplayer bound to [docstringbindtoplayer < (00000014)>] Prisoner
-[!BIND] Script BindMeToMultipleTargets bound to [BindMeToMultipleTargets < (0001348A)>] Hod
-[!BIND] Script BindMeToMultipleTargets bound to [BindMeToMultipleTargets < (00000014)>] Prisoner
-[!BIND] Script BindMeToMultipleTargets bound to [BindMeToMultipleTargets < (00035534)>] Hilde
 [!BIND] Script BindMeToGeneratedObject bound to Fork
-[!BIND] Script BindMeToMultipleTargets bound to [BindMeToMultipleTargets < (00013491)>] Sven
+[!BIND] Script BindMeToGeneratedObjectEditorID bound to Sweet Roll
+[!BIND] Script BindMeToGeneratedObjectFormID bound to Sweet Roll
+[!BIND] Script BindMeToGeneratedQuest bound to 
+[!BIND] Script BindMeToGeneratedQuestWithName bound to mycoolquest
 [!BIND] Script BindMeToHodByEditorID bound to [BindMeToHodByEditorID < (0001348A)>] Hod
 [!BIND] Script BindMeToHodByID bound to [BindMeToHodByID < (0001348A)>] Hod
+[!BIND] Script BindMeToMultipleTargets bound to [BindMeToMultipleTargets < (00000014)>] Prisoner
+[!BIND] Script BindMeToMultipleTargets bound to [BindMeToMultipleTargets < (0001348A)>] Hod
+[!BIND] Script BindMeToMultipleTargets bound to [BindMeToMultipleTargets < (00013491)>] Sven
+[!BIND] Script BindMeToMultipleTargets bound to [BindMeToMultipleTargets < (00035534)>] Hilde
 [!BIND] Script BindMeToPlayer bound to [BindMeToPlayer < (00000014)>] Prisoner
-[!BIND] Script docstringbindtomultipletargets bound to [docstringbindtomultipletargets < (00000014)>] Prisoner
+[!BIND] Script DocStringBindTohod bound to [DocStringBindTohod < (0001348A)>] Hod
+[!BIND] Script DocStringBindToMultipleTargets bound to [DocStringBindToMultipleTargets < (00000014)>] Prisoner
+[!BIND] Script DocStringBindToMultipleTargets bound to [DocStringBindToMultipleTargets < (0001348A)>] Hod
+[!BIND] Script DocStringBindToMultipleTargets bound to [DocStringBindToMultipleTargets < (00013491)>] Sven
+[!BIND] Script DocStringBindToMultipleTargets bound to [DocStringBindToMultipleTargets < (00035534)>] Hilde
+[!BIND] Script DocStringBindToNPCs bound to [DocStringBindToNPCs < (0001348A)>] Hod
+[!BIND] Script DocStringBindToNPCs bound to [DocStringBindToNPCs < (00013491)>] Sven
+[!BIND] Script DocStringBindToNPCs bound to [DocStringBindToNPCs < (00035534)>] Hilde
+[!BIND] Script DocStringBindToplayer bound to [DocStringBindToplayer < (00000014)>] Prisoner
