@@ -6,6 +6,8 @@
         "jsoncpp",
         "commonlibsse-ng",
         "champollion",
+        "bandit",
+        "snowhouse",
         { "name": "skyrimscripting-cmake", "version>=": "0.0.1" },
         { "name": "skyrimscripting-plugin", "version>=": "0.1.0#1" }
     ]
