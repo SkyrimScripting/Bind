@@ -2,7 +2,7 @@
 
 #include "SkyrimScripting/BIND/Bind.h"
 #include "SkyrimScripting/BIND/BindingDefinition.h"
-#include "SkyrimScripting/BIND/DocStringSearch.h"
+#include "SkyrimScripting/BIND/DocStrings/DocStringSearch.h"
 
 namespace SkyrimScripting::BIND {
 
@@ -17,8 +17,8 @@ namespace SkyrimScripting::BIND {
         });
     }
 
-    OnInit {
-        spdlog::set_pattern("%v");
-        DocStringSearch::Search(BindingDefinitions);
-    }
+    OnInit { spdlog::set_pattern("%v"); }
+
+    // Hmm. OnInit we can begin searching. But we can't query the VM until DataLoaded. Hmmmm...
+    OnDataLoaded { DocStrings::Search(BindingDefinitions); }
 }

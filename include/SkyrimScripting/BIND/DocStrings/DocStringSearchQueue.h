@@ -4,9 +4,9 @@
 #include <SkyrimScripting/Plugin.h>
 
 #include "SkyrimScripting/BIND/BindingDefinition.h"
-#include "SkyrimScripting/BIND/DocStringSearchWorker.h"
+#include "SkyrimScripting/BIND/DocStrings/DocStringSearchWorker.h"
 
-namespace SkyrimScripting::BIND::DocStringSearch {
+namespace SkyrimScripting::BIND::DocStrings {
 
     std::queue<std::filesystem::path> FileSearchQueue;
 

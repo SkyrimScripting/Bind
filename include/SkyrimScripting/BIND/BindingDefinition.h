@@ -17,9 +17,9 @@ namespace SkyrimScripting::BIND {
 
         enum class BindType { Existing, NewQuest, NewObject };
 
-        std::string Identifier;
         BindType Type;
         std::string ScriptName;
+        std::string Identifier;
         RE::FormID FormID;
         std::string EditorID;
         std::string PluginFile;

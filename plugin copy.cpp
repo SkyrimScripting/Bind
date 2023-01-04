@@ -1,19 +1,18 @@
 #include <SkyrimScripting/Plugin.h>
 #include <json/json.h>
 
-#include <Champollion/Pex/FileReader.hpp>
-
 #include "BIND/BindingDefinition.h"
 #include "BIND/Scan.h"
 #include "BIND/System.h"
-#include "BIND/Util.h"
+
 
 namespace SkyrimScripting::Bind {
 
     class GameStartedEvent : public RE::BSTEventSink<RE::TESCellFullyLoadedEvent> {
     public:
         std::function<void()> callback;
-        RE::BSEventNotifyControl ProcessEvent(const RE::TESCellFullyLoadedEvent*, RE::BSTEventSource<RE::TESCellFullyLoadedEvent>* source) override {
+        RE::BSEventNotifyControl ProcessEvent(const RE::TESCellFullyLoadedEvent*,
+                                              RE::BSTEventSource<RE::TESCellFullyLoadedEvent>* source) override {
             callback();
             source->RemoveEventSink(this);
             return RE::BSEventNotifyControl::kContinue;
@@ -39,7 +38,8 @@ namespace SkyrimScripting::Bind {
         if (form)
             return form;
         else
-            logger::info("BIND ERROR [{}:{}] ({}) Form ID '{:x}' does not exist", FilePath, LineNumber, ScriptName, formID);
+            logger::info("BIND ERROR [{}:{}] ({}) Form ID '{:x}' does not exist", FilePath, LineNumber, ScriptName,
+                         formID);
         return {};
     }
     RE::TESForm* LookupEditorID(const std::string& editorID) {
@@ -47,7 +47,8 @@ namespace SkyrimScripting::Bind {
         if (form)
             return form;
         else
-            logger::info("BIND ERROR [{}:{}] ({}) Form Editor ID '{}' does not exist (Are you using po3 Tweaks?)", FilePath, LineNumber, ScriptName, editorID);
+            logger::info("BIND ERROR [{}:{}] ({}) Form Editor ID '{}' does not exist (Are you using po3 Tweaks?)",
+                         FilePath, LineNumber, ScriptName, editorID);
         return {};
     }
 
@@ -60,12 +61,16 @@ namespace SkyrimScripting::Bind {
     }
 
     void Bind_GeneratedObject(RE::TESForm* baseForm = nullptr) {
-        if (!baseForm) baseForm = DefaultBaseFormForCreatingObjects;  // By default, simply puts a fork next to the WEMerchantChest in the WEMerchantChests cell. Forking awesome.
-        auto niPointer = LocationForPlacingObjects->PlaceObjectAtMe(skyrim_cast<RE::TESBoundObject*, RE::TESForm>(baseForm), false);
+        if (!baseForm)
+            baseForm = DefaultBaseFormForCreatingObjects;  // By default, simply puts a fork next to the WEMerchantChest
+                                                           // in the WEMerchantChests cell. Forking awesome.
+        auto niPointer =
+            LocationForPlacingObjects->PlaceObjectAtMe(skyrim_cast<RE::TESBoundObject*, RE::TESForm>(baseForm), false);
         if (niPointer)
             Bind_Form(niPointer.get());
         else
-            logger::info("BIND ERROR [{}:{}] ({}) Could not generate object ({}, {})", FilePath, LineNumber, ScriptName, baseForm->GetFormID(), baseForm->GetName());
+            logger::info("BIND ERROR [{}:{}] ({}) Could not generate object ({}, {})", FilePath, LineNumber, ScriptName,
+                         baseForm->GetFormID(), baseForm->GetName());
     }
     void Bind_GeneratedObject_BaseEditorID(const std::string& baseEditorId) {
         auto* form = LookupEditorID(baseEditorId);
@@ -103,7 +108,8 @@ namespace SkyrimScripting::Bind {
             parent = parent->parentTypeInfo;
         }
         if (parentName.empty()) {
-            logger::info("BIND ERROR [{}:{}] ({}) Cannot auto-bind to a script which does not `extends` anything", FilePath, LineNumber, ScriptName);
+            logger::info("BIND ERROR [{}:{}] ({}) Cannot auto-bind to a script which does not `extends` anything",
+                         FilePath, LineNumber, ScriptName);
             return;
         }
         Util::LowerCase(parentName);
@@ -114,7 +120,8 @@ namespace SkyrimScripting::Bind {
         else if (parentName == "objectreference")
             Bind_GeneratedObject();
         else
-            logger::info("BIND ERROR [{}:{}] ({}) No default BIND behavior available for script which `extends` {}", FilePath, LineNumber, ScriptName, parentName);
+            logger::info("BIND ERROR [{}:{}] ({}) No default BIND behavior available for script which `extends` {}",
+                         FilePath, LineNumber, ScriptName, parentName);
     }
 
     void ProcessBindingTarget(std::string bindTarget) {
@@ -161,8 +168,9 @@ namespace SkyrimScripting::Bind {
 
     void OnGameStart() {
         vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
-        DefaultBaseFormForCreatingObjects = RE::TESForm::LookupByID(0xAEBF3);             // DwarvenFork
-        LocationForPlacingObjects = RE::TESForm::LookupByID<RE::TESObjectREFR>(0xBBCD1);  // The chest in WEMerchantChests
+        DefaultBaseFormForCreatingObjects = RE::TESForm::LookupByID(0xAEBF3);  // DwarvenFork
+        LocationForPlacingObjects =
+            RE::TESForm::LookupByID<RE::TESObjectREFR>(0xBBCD1);  // The chest in WEMerchantChests
         for (auto binding : BindingLinesFromComments) ProcessBindingLine(binding);
     }
 
@@ -174,7 +182,8 @@ namespace SkyrimScripting::Bind {
             Json::Reader reader;
             auto success = reader.parse(jsonFileContent.str(), DocstringJsonRoot);
             if (!success) {
-                logger::error("Failed to parse json file required for Bind to parse script comments. Path: '{}'", DocstringJsonFilePath.string());
+                logger::error("Failed to parse json file required for Bind to parse script comments. Path: '{}'",
+                              DocstringJsonFilePath.string());
                 return false;
             }
         } else {
@@ -196,7 +205,8 @@ namespace SkyrimScripting::Bind {
         unsigned int unmodifiedScriptCount = 0;
         auto startTime = std::chrono::high_resolution_clock::now();
         DocstringJsonFilePath = std::filesystem::current_path() / JSON_FILE_PATH;
-        if (!std::filesystem::is_directory(DocstringJsonFilePath.parent_path())) std::filesystem::create_directory(DocstringJsonFilePath.parent_path());
+        if (!std::filesystem::is_directory(DocstringJsonFilePath.parent_path()))
+            std::filesystem::create_directory(DocstringJsonFilePath.parent_path());
         if (InitJson()) {
             auto& scriptBindComments = DocstringJsonRoot["scripts"];
             auto& mtimes = DocstringJsonRoot["mtimes"];
@@ -258,7 +268,8 @@ namespace SkyrimScripting::Bind {
         }
         auto endTime = std::chrono::high_resolution_clock::now();
         auto durationInMs = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
-        logger::info("DocString Processing {} scripts ({} unmodified) took {}ms", scriptCount, unmodifiedScriptCount, durationInMs);
+        logger::info("DocString Processing {} scripts ({} unmodified) took {}ms", scriptCount, unmodifiedScriptCount,
+                     durationInMs);
         SaveJson();
     }
 

@@ -5,13 +5,12 @@
 #include <Champollion/Pex/FileReader.hpp>
 
 #include "SkyrimScripting/BIND/BindingDefinition.h"
+#include "SkyrimScripting/BIND/DocStrings/DocStringFileProcessor.h"
 #include "SkyrimScripting/BIND/Util.h"
 
-namespace SkyrimScripting::BIND::DocStringSearch {
+namespace SkyrimScripting::BIND::DocStrings {
 
     std::mutex Mutex_GetNextFilePath;
-    std::mutex Mutex_AddBindingDefinitions;
-
     std::atomic<unsigned int> NextWorkerId;
 
     class DocStringSearchWorker {
@@ -42,13 +41,18 @@ namespace SkyrimScripting::BIND::DocStringSearch {
             auto path = GetNextPath();
             while (!path.empty()) {
                 logger::info("[Thread {}] {}", _workerID, path.string());
-                // ...
+                try {
+                    DocStringFileProcessor::ProcessFile(path, _bindingDefinitions);
+                } catch (...) {
+                    logger::error("[Thread {}] Error processing file '{}'", _workerID, path.string());
+                }
                 path = GetNextPath();
             }
 
             logger::info("[Thread {}] End .pex queue work ({} processed)", _workerID, processedCount);
         }
     };
+
     static void RUN_WORKER(std::queue<std::filesystem::path>& fileSearchQueue,
                            std::vector<BindingDefinition>& bindingDefinitions) {
         DocStringSearchWorker(NextWorkerId++, fileSearchQueue, bindingDefinitions).DoWork();
