@@ -17,8 +17,20 @@ namespace SkyrimScripting::BIND {
         });
     }
 
-    OnInit { spdlog::set_pattern("%v"); }
+    OnInit {
+        spdlog::set_pattern("%v");
+        // FIND ALL DOC STRINGS ---> vector<string> (no VM info available here)
+    }
 
-    // Hmm. OnInit we can begin searching. But we can't query the VM until DataLoaded. Hmmmm...
-    OnDataLoaded { DocStrings::Search(BindingDefinitions); }
+    OnDataLoaded {
+        // PROCESS ALL DOC STRINGS, vector<string> ---> vector<BindingDefinition> (using the VM's info)
+        //
+        //
+        //
+        DocStrings::Search(BindingDefinitions);
+    }
+
+    // OnGameLoad {
+    //      EVALUATE ALL BINDINGS
+    // }
 }
