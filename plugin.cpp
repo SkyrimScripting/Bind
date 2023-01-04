@@ -1,36 +1,24 @@
 #include <SkyrimScripting/Plugin.h>
 
-#include "SkyrimScripting/BIND/Bind.h"
-#include "SkyrimScripting/BIND/BindingDefinition.h"
-#include "SkyrimScripting/BIND/DocStrings/DocStringSearch.h"
+#include "SkyrimScripting/BIND/Bind.h"               // Rename?
+#include "SkyrimScripting/BIND/BindingDefinition.h"  // Make this BindingDefinitions.h
+#include "SkyrimScripting/BIND/BindingDefinitions.h"
+#include "SkyrimScripting/BIND/DocStrings/DocStringSearch.h"  // make this DocStrings.h
 
 namespace SkyrimScripting::BIND {
 
-    std::atomic<bool> BindingsApplied;
-    std::vector<BindingDefinition> BindingDefinitions;
+    // These are the Binding Definitions discovered from doc strings (and transformed into BindingDefinition structs).
+    std::vector<BindingDefinition> Definitions;
 
-    EventHandlers {
-        // To start off with, this only ever runs once.
-        // In future versions, we will acknowledge save/load games, etc.
-        On<RE::TESCellFullyLoadedEvent>([](const RE::TESCellFullyLoadedEvent*) {
-            if (!BindingsApplied.exchange(true)) BindAll(BindingDefinitions);
-        });
-    }
+    // This is a Queue of file paths which is searched for {!BIND} doc strings.
+    std::queue<std::filesystem::path> FilePathsToSearchForDocStrings;
 
-    OnInit {
-        spdlog::set_pattern("%v");
-        // FIND ALL DOC STRINGS ---> vector<string> (no VM info available here)
-    }
+    // Did the search for doc strings in files complete? If so, kDataLoaded, it will transform into BindingDefinitions.
+    std::atomic<bool> IsDocStringSearchComplete;
 
-    OnDataLoaded {
-        // PROCESS ALL DOC STRINGS, vector<string> ---> vector<BindingDefinition> (using the VM's info)
-        //
-        //
-        //
-        DocStrings::Search(BindingDefinitions);
-    }
+    // Has kDataLoaded occurred? If so, when DocString search completes, it will transform into BindingDefinitions.
+    std::atomic<bool> HasDataLoaded;
 
-    // OnGameLoad {
-    //      EVALUATE ALL BINDINGS
-    // }
+    OnInit { DocStrings::BeginSearch(); }
+    OnDataLoaded { BindingDefinitions::BeginTransformation(); }
 }
