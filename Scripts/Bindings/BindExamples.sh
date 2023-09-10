@@ -8,7 +8,9 @@ BindMeToGeneratedQuest $Quest
 BindMeToGeneratedQuestWithName $Quest(MyCoolQuest)
 BindMeToGeneratedObject $Object
 BindMeToGeneratedObjectEditorID $Object(FoodSweetroll)
-BindMeToGeneratedObjectFormID $Object(0x64B3D)
+BindMeToGeneratedObjectFormID $Object(0x2E4FF)
+BindMeToGenObjectEditorIDWithEditorID $Object(FoodSweetroll,MySweetRoll)
+BindMeToGenObjectFormIDWithEditorID $Object(0x2E4FF,MyGrandSoulGem)
 
 # Auto
 AutoBindToGeneratedQuest
