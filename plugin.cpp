@@ -4,6 +4,9 @@
 #include <SKSE/SKSE.h>
 #include <spdlog/sinks/basic_file_sink.h>
 
+#include <chrono>
+#include <thread>
+
 #define _Log_(...) SKSE::log::info(__VA_ARGS__)
 
 namespace SkyrimScripting::Bind {
@@ -68,88 +71,30 @@ namespace SkyrimScripting::Bind {
                 _Log_("[BIND] Bound script {} to form {:x} {}", ScriptName, form->GetFormID(), form->GetName());
         }
     }
-    void PrintNearbyObjects() {
-        _Log_("Printing nearby objects close to {} ({:x}) {}", LocationForPlacingObjects->GetFormEditorID(), LocationForPlacingObjects->GetFormID(), LocationForPlacingObjects->GetName());
-        // void ForEachReferenceInRange(TESObjectREFR* a_origin, float a_radius, std::function<BSContainer::ForEachResult(TESObjectREFR& a_ref)> a_callback);
-        RE::TES::GetSingleton()->ForEachReferenceInRange(LocationForPlacingObjects, 100, [](RE::TESObjectREFR& ref) {
-            _Log_("[BIND] Nearby Object {:x} {}", ref.GetFormID(), ref.GetFormEditorID());
-            return RE::BSContainer::ForEachResult::kContinue;
-        });
-    }
     void Bind_GeneratedObject(RE::TESForm* baseForm = nullptr, const std::string& newObjectEditorID = "") {
         RE::TESObjectREFR* objectRef = nullptr;
+        if (!newObjectEditorID.empty()) objectRef = RE::TESForm::LookupByEditorID<RE::TESObjectREFR>(newObjectEditorID);
         if (objectRef) {
-            _Log_("[BIND] Object already generated {:x} {}", objectRef->GetFormID(), objectRef->GetFormEditorID());
+            _Log_("Object already generated {:x} {}", objectRef->GetFormID(), objectRef->GetFormEditorID());
             Bind_Form(objectRef);
             return;
         }
         if (!baseForm) baseForm = DefaultBaseFormForCreatingObjects;  // By default, simply puts a fork next to the WEMerchantChest in the WEMerchantChests cell. Forking awesome.
         auto niPointer = LocationForPlacingObjects->PlaceObjectAtMe(skyrim_cast<RE::TESBoundObject*, RE::TESForm>(baseForm), false);
-
-        //
-        PrintNearbyObjects();
-        //
-
         if (niPointer) {
-            auto* newObjectRef = niPointer.get();
-            _Log_("[BIND] Generated object {:x} (base type: {:x} {}) {}", newObjectRef->GetFormID(), baseForm->GetFormID(), baseForm->GetName(), baseForm->GetFormEditorID());
-            Bind_Form(newObjectRef);
+            if (!newObjectEditorID.empty()) niPointer.get()->SetFormEditorID(newObjectEditorID.c_str());
+            _Log_("[BIND] Generated object {:x} (base type: {:x} {}) {}", niPointer.get()->GetFormID(), baseForm->GetFormID(), baseForm->GetName(), niPointer.get()->GetFormEditorID());
+            Bind_Form(niPointer.get());
         } else
             _Log_("[BIND] Error [{}:{}] ({}) Could not generate object ({:x}, {})", FilePath, LineNumber, ScriptName, baseForm->GetFormID(), baseForm->GetName());
     }
-    static RE::AlchemyItem* newBaseForm = nullptr;
-    void Bind_GeneratedObject_WithEditorID(RE::TESForm* baseBaseForm, const std::string& editorID = "") {
-        auto* baseForm = RE::TESForm::LookupByID<RE::AlchemyItem>(baseBaseForm->GetFormID());
-        if (!baseForm) {
-            _Log_("[BIND] Error [{}:{}] ({}) Base Form {:x} {} does not exist", FilePath, LineNumber, ScriptName, baseBaseForm->GetFormID(), baseBaseForm->GetName());
-            return;
-        }
-        RE::AlchemyItem* existingForm = nullptr;
-        if (!editorID.empty()) existingForm = RE::TESForm::LookupByEditorID<RE::AlchemyItem>(editorID);
-        if (!existingForm) {
-            newBaseForm = nullptr;
-            // newBaseForm = static_cast<RE::AlchemyItem*>(baseForm->CreateDuplicateForm(false, newBaseForm));  // (void*)newBaseForm));  // Second argument not RE'd maybe?
-            baseForm->CreateDuplicateForm(true, newBaseForm);  // (void*)newBaseForm));  // Second argument not RE'd maybe?
-            if (newBaseForm) {
-                _Log_("A new form was created with form ID {} and editor ID {}", newBaseForm->GetFormID(), newBaseForm->GetFormEditorID());
-                auto* newNewForm = RE::TESForm::LookupByID<RE::AlchemyItem>(newBaseForm->GetFormID());
-                if (!newNewForm) {
-                    _Log_("Error: newNewForm is nullptr");
-                    return;
-                }
-                newNewForm->SetFormEditorID(editorID.c_str());
-                _Log_("xxx I legit just set the form editor ID of the new form to {} and it is {}", editorID.c_str(), newNewForm->GetFormEditorID());
-                newNewForm->SetFormEditorID("ThisIsATest");
-
-                _Log_("(Again) I legit just set the form editor ID of the new form to {} and it is {}", editorID.c_str(), newNewForm->GetFormEditorID());
-                _Log_("[BIND] Generated New Base Form {:x} {}", newNewForm->GetFormID(), newNewForm->GetFormEditorID());
-                Bind_GeneratedObject(newNewForm);
-            } else {
-                _Log_("[BIND] Error [{}:{}] ({}) Could not generate new base form ({:x}, {})", FilePath, LineNumber, ScriptName, baseForm->GetFormID(), baseForm->GetName());
-            }
-        } else
-            _Log_("[BIND] Object already generated (created new base form: {:x} {})", baseForm->GetFormID(), baseForm->GetFormEditorID());
-    }
     void Bind_GeneratedObject_BaseEditorID(const std::string& baseEditorId, const std::string& newObjectEditorID = "") {
         auto* form = LookupEditorID(baseEditorId);
-        if (form) {
-            if (!newObjectEditorID.empty()) {
-                Bind_GeneratedObject_WithEditorID(form, newObjectEditorID);  // base form is actually ignored here. - We'll change syntax...
-            } else {
-                Bind_GeneratedObject(form, newObjectEditorID);
-            }
-        } else
-            _Log_("[BIND] Error [{}:{}] ({}) Base Editor ID '{}' does not exist (Are you using po3 Tweaks?)", FilePath, LineNumber, ScriptName, baseEditorId);
+        if (form) Bind_GeneratedObject(form, newObjectEditorID);
     }
     void Bind_GeneratedObject_BaseFormID(RE::FormID baseFormID, const std::string& newObjectEditorID = "") {
         auto* form = LookupFormID(baseFormID);
-        if (form) {
-            if (!newObjectEditorID.empty())
-                Bind_GeneratedObject_WithEditorID(form, newObjectEditorID);  // base form is actually ignored here. - We'll change syntax...
-            else
-                Bind_GeneratedObject(form, newObjectEditorID);
-        } else
-            _Log_("[BIND] Error [{}:{}] ({}) Base Form ID '{:x}' does not exist", FilePath, LineNumber, ScriptName, baseFormID);
+        if (form) Bind_GeneratedObject(form, newObjectEditorID);
     }
     void Bind_GeneratedQuest(const std::string& editorID = "") {
         RE::TESQuest* quest = nullptr;
@@ -205,7 +150,6 @@ namespace SkyrimScripting::Bind {
         std::istringstream lineStream{line};
         lineStream >> ScriptName;
         if (ScriptName.empty() || ScriptName.starts_with('#') || ScriptName.starts_with("//")) return;
-        _Log_("[BIND] [{}:{}] {}", FilePath, LineNumber, line);
         if (!vm->TypeIsValid(ScriptName)) {
             _Log_("[BIND] Error [{}:{}] Script '{}' does not exist", FilePath, LineNumber, ScriptName);
             return;
@@ -282,11 +226,12 @@ namespace SkyrimScripting::Bind {
             ProcessBindingFile();
         }
     }
-    void RunBindings() {
+    void RunBindings(int sleepMs = 500) {
         if (AlreadyRanForThisLoadGame)
             return;
         else
             AlreadyRanForThisLoadGame = true;
+        if (sleepMs > 0) std::this_thread::sleep_for(std::chrono::milliseconds(sleepMs));
         vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
         DefaultBaseFormForCreatingObjects = RE::TESForm::LookupByID(0xAEBF3);             // DwarvenFork
         LocationForPlacingObjects = RE::TESForm::LookupByID<RE::TESObjectREFR>(0xBBCD1);  // The chest in WEMerchantChests
@@ -296,7 +241,7 @@ namespace SkyrimScripting::Bind {
     public:
         RE::BSEventNotifyControl ProcessEvent(const RE::TESCellFullyLoadedEvent*, RE::BSTEventSource<RE::TESCellFullyLoadedEvent>* source) override {
             if (!AlreadyRanForThisLoadGame) {
-                _Log_("[BIND] CellFullyLoadedEvent");
+                _Log_("CellFullyLoadedEvent");
                 RunBindings();
             }
             return RE::BSEventNotifyControl::kContinue;
