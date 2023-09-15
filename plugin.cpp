@@ -70,7 +70,10 @@ namespace SkyrimScripting::Bind {
         if (form) Bind_GeneratedObject(form);
     }
     void Bind_GeneratedQuest(std::string editorID = "") {
-        auto* form = RE::IFormFactory::GetConcreteFormFactoryByType<RE::TESQuest>()->Create();
+        auto* bardQuest = RE::TESForm::LookupByEditorID<RE::TESQuest>("BardSongs");
+        RE::TESQuest* form = nullptr;
+        form = static_cast<RE::TESQuest*>(bardQuest->CreateDuplicateForm(true, form));
+        // auto* form = RE::IFormFactory::GetConcreteFormFactoryByType<RE::TESQuest>()->Create();
         if (!editorID.empty()) form->SetFormEditorID(editorID.c_str());
         Bind_Form(form);
     }
