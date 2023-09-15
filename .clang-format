@@ -1,20 +1,4 @@
 ---
-# This file is optional but helps me ensure the same
-# code style is used in all templates.
-#
-# You can find out more about these configuration files at:
-# https://clang.llvm.org/docs/ClangFormatStyleOptions.html
-#
-# To use this file, configure your IDE to use "clang-format".
-# This will be different for each IDE.
-#
-# You can download "clang-format" by installing LLVM from here:
-# https://github.com/llvm/llvm-project/releases
-#
-# ^ look for the latest release which has a win64.exe installer
-#   and be sure to choose the option to add LLVM to your PATH
-#   when installing
-#
 UseTab: Never
 TabWidth: '4'
 IndentWidth: '4'
@@ -24,5 +8,15 @@ ColumnLimit: 240
 NamespaceIndentation: All
 IndentPPDirectives: BeforeHash
 FixNamespaceComments: false
+DerivePointerAlignment: false
+AlignArrayOfStructures: Left
+PointerAlignment: Left
+ReferenceAlignment: Left
+AlignAfterOpenBracket: BlockIndent
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortBlocksOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortLoopsOnASingleLine: true
 
 ...
