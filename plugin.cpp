@@ -75,11 +75,13 @@ namespace SkyrimScripting::Bind {
             _Log_("Script {} already attached to quest {:x}", ScriptName, GeneratedQuestFormIDs[editorID]);
             return;
         }
-        auto* form = RE::IFormFactory::GetConcreteFormFactoryByType<RE::TESQuest>()->Create();
-        if (!editorID.empty()) {
-            form->SetFormEditorID(editorID.c_str());
-            GeneratedQuestFormIDs[editorID] = form->GetFormID();
+        RE::TESQuest* form = nullptr;
+        if (!editorID.empty()) form = RE::TESForm::LookupByEditorID<RE::TESQuest>(editorID);
+        if (!form) {
+            form = RE::IFormFactory::GetConcreteFormFactoryByType<RE::TESQuest>()->Create();
+            if (!editorID.empty()) form->SetFormEditorID(editorID.c_str());
         }
+        if (!editorID.empty()) GeneratedQuestFormIDs[editorID] = form->GetFormID();
         Bind_Form(form);
     }
     void Bind_FormID(RE::FormID formID) {
