@@ -2,7 +2,6 @@
 UseTab: Never
 TabWidth: '4'
 IndentWidth: '4'
-BasedOnStyle: Google
 AccessModifierOffset: -4
 ColumnLimit: 240
 NamespaceIndentation: All
@@ -18,5 +17,8 @@ AllowShortBlocksOnASingleLine: true
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: Inline
 AllowShortLoopsOnASingleLine: true
+AllowAllParametersOfDeclarationOnNextLine: false
+BinPackParameters: false
+ContinuationIndentWidth: 0
 
 ...

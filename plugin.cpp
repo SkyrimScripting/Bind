@@ -1,4 +1,4 @@
-// This whole plugin intentionally implemented in 1 file (for a truly minimalistic v1 of BIND) - Under 210 LOC
+// This whole plugin intentionally implemented in 1 file (for a truly minimalistic v1 of BIND) - 200 LOC
 
 #include <RE/Skyrim.h>
 #include <SKSE/SKSE.h>
@@ -8,6 +8,7 @@
 
 namespace SkyrimScripting::Bind {
 
+    bool AlreadyRanForThisLoadGame = false;
     RE::TESForm* DefaultBaseFormForCreatingObjects;
     RE::TESObjectREFR* LocationForPlacingObjects;
     std::string FilePath;
@@ -22,18 +23,13 @@ namespace SkyrimScripting::Bind {
     RE::TESForm* LookupFormID(RE::FormID formID) {
         auto* form = RE::TESForm::LookupByID(formID);
         if (form) return form;
-        else _Log_("[BIND] Error [{}:{}] ({}) Form ID '{:x}' does not exist", FilePath, LineNumber, ScriptName, formID);
+        else _Log_("Error [{}:{}] ({}) Form ID '{:x}' does not exist", FilePath, LineNumber, ScriptName, formID);
         return {};
     }
     RE::TESForm* LookupEditorID(const std::string& editorID) {
         auto* form = RE::TESForm::LookupByEditorID(editorID);
         if (form) return form;
-        else
-            _Log_(
-                "[BIND] Error [{}:{}] ({}) Form Editor ID '{}' does not exist (Are you using po3 "
-                "Tweaks?)",
-                FilePath, LineNumber, ScriptName, editorID
-            );
+        else _Log_("Error [{}:{}] ({}) Form Editor ID '{}' does not exist (Are you using po3 Tweaks?)", FilePath, LineNumber, ScriptName, editorID);
         return {};
     }
     bool FormHasScriptAttached(RE::VMHandle handle, const std::string scriptName) {
@@ -43,31 +39,27 @@ namespace SkyrimScripting::Bind {
         if (found != _vm->attachedScripts.end()) {
             RE::BSFixedString bsScriptName{scriptName};
             auto& scripts = found->second;
-            for (auto& script : scripts) {
+            for (auto& script : scripts)
                 if (script->type->name == bsScriptName) return true;
-            }
         }
         return false;
     }
     void Bind_Form(RE::TESForm* form) {
         auto handle = vm->GetObjectHandlePolicy()->GetHandleForObject(form->GetFormType(), form);
         if (FormHasScriptAttached(handle, ScriptName)) {
-            _Log_("[BIND] Script {} already attached to form {} ({})", ScriptName, form->GetFormID(), form->GetName());
+            _Log_("Script {} already attached to form {:x}", ScriptName, form->GetFormID());
         } else {
             RE::BSTSmartPointer<RE::BSScript::Object> object;
             vm->CreateObject(ScriptName, object);
             vm->GetObjectBindPolicy()->BindObject(object, handle);
-            _Log_("[BIND] Bound script {} to form {} ({})", ScriptName, form->GetFormID(), form->GetName());
+            _Log_("Bound script {} to form {:x}", ScriptName, form->GetFormID());
         }
     }
     void Bind_GeneratedObject(RE::TESForm* baseForm = nullptr) {
-        if (!baseForm)
-            baseForm = DefaultBaseFormForCreatingObjects;  // By default, simply puts a fork next to the
-                                                           // WEMerchantChest in the WEMerchantChests cell.
-                                                           // Forking awesome.
+        if (!baseForm) baseForm = DefaultBaseFormForCreatingObjects;
         auto niPointer = LocationForPlacingObjects->PlaceObjectAtMe(skyrim_cast<RE::TESBoundObject*, RE::TESForm>(baseForm), false);
         if (niPointer) Bind_Form(niPointer.get());
-        else _Log_("[BIND] Error [{}:{}] ({}) Could not generate object ({}, {})", FilePath, LineNumber, ScriptName, baseForm->GetFormID(), baseForm->GetName());
+        else _Log_("Error [{}:{}] ({}) Could not generate object ({:x}, {})", FilePath, LineNumber, ScriptName, baseForm->GetFormID(), baseForm->GetName());
     }
     void Bind_GeneratedObject_BaseEditorID(const std::string& baseEditorId) {
         auto* form = LookupEditorID(baseEditorId);
@@ -105,23 +97,14 @@ namespace SkyrimScripting::Bind {
             parent = parent->parentTypeInfo;
         }
         if (parentName.empty()) {
-            _Log_(
-                "[BIND] Error [{}:{}] ({}) Cannot auto-bind to a script which does not `extends` "
-                "anything",
-                FilePath, LineNumber, ScriptName
-            );
+            _Log_("Error [{}:{}] ({}) Cannot auto-bind to a script which does not `extends` anything", FilePath, LineNumber, ScriptName);
             return;
         }
         LowerCase(parentName);
         if (parentName == "quest") Bind_GeneratedQuest();
         else if (parentName == "actor") Bind_FormID(0x14);
         else if (parentName == "objectreference") Bind_GeneratedObject();
-        else
-            _Log_(
-                "[BIND] Error [{}:{}] ({}) No default BIND behavior available for script which "
-                "`extends` {}",
-                FilePath, LineNumber, ScriptName, parentName
-            );
+        else _Log_("Error [{}:{}] ({}) No default BIND behavior available for script which `extends` {}", FilePath, LineNumber, ScriptName, parentName);
     }
     void ProcessBindingLine(std::string line) {
         if (line.empty()) return;
@@ -129,8 +112,9 @@ namespace SkyrimScripting::Bind {
         std::istringstream lineStream{line};
         lineStream >> ScriptName;
         if (ScriptName.empty() || ScriptName.starts_with('#') || ScriptName.starts_with("//")) return;
+        _Log_("[{}:{}] {}", FilePath, LineNumber, line);
         if (!vm->TypeIsValid(ScriptName)) {
-            _Log_("[BIND] Error [{}:{}] Script '{}' does not exist", FilePath, LineNumber, ScriptName);
+            _Log_("Error [{}:{}] Script '{}' does not exist", FilePath, LineNumber, ScriptName);
             return;
         }
         std::string bindTarget;
@@ -149,7 +133,7 @@ namespace SkyrimScripting::Bind {
         else Bind_EditorID(bindTarget);
     }
     void ProcessBindingFile() {
-        _Log_("[BIND] Reading Binding File: {}", FilePath);
+        _Log_("Reading Binding File: {}", FilePath);
         LineNumber = 1;
         std::string line;
         std::ifstream file{FilePath, std::ios::in};
@@ -157,31 +141,38 @@ namespace SkyrimScripting::Bind {
             LineNumber++;
             try {
                 ProcessBindingLine(line);
-            } catch (...) { _Log_("[BIND] Error [{}:{}]", FilePath, LineNumber); }
+            } catch (...) { _Log_("Error [{}:{}]", FilePath, LineNumber); }
         }
         file.close();
     }
     void ProcessAllBindingFiles() {
         if (!std::filesystem::is_directory(BINDING_FILES_FOLDER_ROOT)) {
-            _Log_("[BIND] {} folder not found", BINDING_FILES_FOLDER_ROOT);
+            _Log_("{} folder not found", BINDING_FILES_FOLDER_ROOT);
             return;
         }
-        _Log_("[BIND] Processing Bind Scripts");
         for (auto& file : std::filesystem::directory_iterator(BINDING_FILES_FOLDER_ROOT)) {
             FilePath = file.path().string();
             ProcessBindingFile();
         }
     }
     void Start() {
+        if (AlreadyRanForThisLoadGame) return;
+        else AlreadyRanForThisLoadGame = true;
         vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
-        DefaultBaseFormForCreatingObjects = RE::TESForm::LookupByID(0xAEBF3);             // DwarvenFork
-        LocationForPlacingObjects = RE::TESForm::LookupByID<RE::TESObjectREFR>(0xBBCD1);  // The chest in WEMerchantChests
+        DefaultBaseFormForCreatingObjects = RE::TESForm::LookupByID(0xAEBF3);            // DwarvenFork
+        LocationForPlacingObjects = RE::TESForm::LookupByID<RE::TESObjectREFR>(0xBBCD1); // The chest in WEMerchantChests
         ProcessAllBindingFiles();
     }
+    class CellFullyLoadedEvent : public RE::BSTEventSink<RE::TESCellFullyLoadedEvent> {
+    public:
+        RE::BSEventNotifyControl ProcessEvent(const RE::TESCellFullyLoadedEvent*, RE::BSTEventSource<RE::TESCellFullyLoadedEvent>* source) override {
+            Start();
+            return RE::BSEventNotifyControl::kContinue;
+        }
+    };
     void SetupLog() {
-        auto logsFolder = SKSE::log::log_directory();
         auto pluginName = SKSE::PluginDeclaration::GetSingleton()->GetName();
-        auto logFilePath = *logsFolder / std::format("{}.log", pluginName);
+        auto logFilePath = *SKSE::log::log_directory() / std::format("{}.log", pluginName);
         auto fileLoggerPtr = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath.string(), true);
         auto loggerPtr = std::make_shared<spdlog::logger>("log", std::move(fileLoggerPtr));
         spdlog::set_default_logger(std::move(loggerPtr));
@@ -189,19 +180,21 @@ namespace SkyrimScripting::Bind {
         spdlog::flush_on(spdlog::level::info);
         spdlog::set_pattern("%v");
     }
+    CellFullyLoadedEvent CellFullyLoadedEventSink;
     SKSEPluginLoad(const SKSE::LoadInterface* skse) {
         SKSE::Init(skse);
         SetupLog();
         SKSE::GetMessagingInterface()->RegisterListener([](SKSE::MessagingInterface::Message* message) {
             switch (message->type) {
-                case SKSE::MessagingInterface::kNewGame: _Log_("[BIND] New game started");
-                case SKSE::MessagingInterface::kPostLoadGame:
-                    _Log_("[BIND] Game loaded");
-                    Start();
-                    break;
-                default: break;
+            case SKSE::MessagingInterface::kNewGame:
+            case SKSE::MessagingInterface::kPostLoadGame:
+                AlreadyRanForThisLoadGame = false;
+                Start();
+                break;
+            default: break;
             }
         });
+        RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink<RE::TESCellFullyLoadedEvent>(&CellFullyLoadedEventSink);
         return true;
     }
 }
