@@ -1,4 +1,4 @@
-// This whole plugin intentionally implemented in 1 file (for a truly minimalistic v1 of BIND) - 200 LOC
+// This whole plugin intentionally implemented in 1 file (for a truly minimalistic v1 of BIND) - Under 250 LOC
 
 #include <RE/Skyrim.h>
 #include <SKSE/SKSE.h>
@@ -16,6 +16,7 @@ namespace SkyrimScripting::Bind {
     std::string ScriptName;
     RE::BSScript::IVirtualMachine* vm;
     constexpr auto BINDING_FILES_FOLDER_ROOT = "Data/Scripts/Bindings";
+    std::unordered_map<std::string, RE::FormID> GeneratedQuestFormIDs;
 
     void LowerCase(std::string& text) {
         std::transform(text.begin(), text.end(), text.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
@@ -70,11 +71,15 @@ namespace SkyrimScripting::Bind {
         if (form) Bind_GeneratedObject(form);
     }
     void Bind_GeneratedQuest(std::string editorID = "") {
-        auto* bardQuest = RE::TESForm::LookupByEditorID<RE::TESQuest>("BardSongs");
-        RE::TESQuest* form = nullptr;
-        form = static_cast<RE::TESQuest*>(bardQuest->CreateDuplicateForm(true, form));
-        // auto* form = RE::IFormFactory::GetConcreteFormFactoryByType<RE::TESQuest>()->Create();
-        if (!editorID.empty()) form->SetFormEditorID(editorID.c_str());
+        if (!editorID.empty() && GeneratedQuestFormIDs.contains(editorID)) {
+            _Log_("Script {} already attached to quest {:x}", ScriptName, GeneratedQuestFormIDs[editorID]);
+            return;
+        }
+        auto* form = RE::IFormFactory::GetConcreteFormFactoryByType<RE::TESQuest>()->Create();
+        if (!editorID.empty()) {
+            form->SetFormEditorID(editorID.c_str());
+            GeneratedQuestFormIDs[editorID] = form->GetFormID();
+        }
         Bind_Form(form);
     }
     void Bind_FormID(RE::FormID formID) {
@@ -183,6 +188,35 @@ namespace SkyrimScripting::Bind {
         spdlog::flush_on(spdlog::level::info);
         spdlog::set_pattern("%v");
     }
+    void SaveCallback(SKSE::SerializationInterface* save) {
+        if (save->OpenRecord('QIDS', 1)) {
+            save->WriteRecordData(GeneratedQuestFormIDs.size());
+            for (auto& [editorID, formID] : GeneratedQuestFormIDs) {
+                save->WriteRecordData(editorID);
+                save->WriteRecordData(formID);
+            }
+        }
+    }
+
+    void LoadCallback(SKSE::SerializationInterface* save) {
+        uint32_t type;
+        uint32_t version;
+        uint32_t length;
+        while (save->GetNextRecordInfo(type, version, length)) {
+            if (type == 'QIDS') {
+                size_t size;
+                save->ReadRecordData(size);
+                for (size_t i = 0; i < size; ++i) {
+                    std::string editorID;
+                    save->ReadRecordData(editorID);
+                    RE::FormID formID;
+                    save->ReadRecordData(formID);
+                    GeneratedQuestFormIDs[editorID] = formID;
+                }
+            }
+        }
+    }
+
     CellFullyLoadedEvent CellFullyLoadedEventSink;
     SKSEPluginLoad(const SKSE::LoadInterface* skse) {
         SKSE::Init(skse);
@@ -198,6 +232,10 @@ namespace SkyrimScripting::Bind {
             }
         });
         RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink<RE::TESCellFullyLoadedEvent>(&CellFullyLoadedEventSink);
+        auto serialization = SKSE::GetSerializationInterface();
+        serialization->SetUniqueID('BIND');
+        serialization->SetSaveCallback(SaveCallback);
+        serialization->SetLoadCallback(LoadCallback);
         return true;
     }
 }
