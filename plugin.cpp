@@ -168,6 +168,7 @@ namespace SkyrimScripting::Bind {
     void Start() {
         if (AlreadyRanForThisLoadGame) return;
         else AlreadyRanForThisLoadGame = true;
+        GeneratedQuestFormIDs.clear();
         vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
         DefaultBaseFormForCreatingObjects = RE::TESForm::LookupByID(0xAEBF3);            // DwarvenFork
         LocationForPlacingObjects = RE::TESForm::LookupByID<RE::TESObjectREFR>(0xBBCD1); // The chest in WEMerchantChests
